@@ -6,8 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import CaseDetail from "@/components/CaseDetail";
 import CaseForm from "@/components/CaseForm";
 import CaseList from "@/components/CaseList";
+import OwnerFilter from "@/components/OwnerFilter";
+import OwnerSummary from "@/components/OwnerSummary";
 import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
+import { filterByOwner, listOwnerCodes, sortForReview } from "@/lib/reviewList";
 import { canEdit } from "@/lib/role";
 import { useRole } from "@/lib/useRole";
 
@@ -22,6 +25,8 @@ export default function CaseBoard() {
   const [notice, setNotice] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 담당자 구분값으로 걸러 보기 (빈 문자열 = 전체)
+  const [ownerFilter, setOwnerFilter] = useState("");
   // 물건을 눌렀을 때 상세 제목으로 초점을 옮겨(좁은 화면에서는 스크롤도 따라간다) 키보드·화면 낭독 사용자도 바뀐 것을 알 수 있게 한다
   const [focusRequest, setFocusRequest] = useState(0);
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -103,7 +108,23 @@ export default function CaseBoard() {
     }
   }
 
+  /** 걸러 보는 구분값을 바꾼다. 걸러져서 목록에서 사라지는 물건이 상세에 남아 있지 않게 선택을 풀어 준다 */
+  function handleOwnerFilter(owner: string) {
+    setOwnerFilter(owner);
+    setSelectedId((current) => {
+      if (!current || owner === "") return current;
+      const currentCase = cases?.find((item) => item.id === current);
+      return currentCase?.ownerCode === owner ? current : null;
+    });
+  }
+
   const selected = cases?.find((item) => item.id === selectedId) ?? null;
+  const ownerCodes = listOwnerCodes(cases ?? []);
+  // 마지막 물건을 지우는 등으로 고른 구분값이 목록에서 사라지면 전체로 본다
+  const activeOwner = ownerCodes.includes(ownerFilter) ? ownerFilter : "";
+  // 담당자는 등록 순, 팀장·부점장은 "검토 필요"가 먼저 오는 정렬
+  const filtered = filterByOwner(cases ?? [], activeOwner);
+  const visibleCases = editable ? filtered : sortForReview(filtered);
 
   return (
     <div className="flex flex-col gap-4">
@@ -132,11 +153,22 @@ export default function CaseBoard() {
       ) : cases === null ? (
         <p className="text-sm text-muted">물건 목록을 불러오는 중입니다...</p>
       ) : (
+        <div className="flex flex-col gap-4">
+        {/* 팀장·부점장: 구분값별 진행 현황 요약 (담당자 화면에는 보이지 않는다) */}
+        {!editable && <OwnerSummary cases={cases} />}
+        {cases.length > 0 && (
+          <OwnerFilter
+            owners={ownerCodes}
+            value={activeOwner}
+            onChange={handleOwnerFilter}
+          />
+        )}
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           <CaseList
-            cases={cases}
+            cases={visibleCases}
             selectedId={selectedId}
             editable={editable}
+            showReviewBadge={!editable}
             deletingId={deletingId}
             onSelect={handleSelect}
             onDelete={handleDelete}
@@ -149,6 +181,7 @@ export default function CaseBoard() {
             headingRef={detailHeadingRef}
             onUpdated={handleUpdated}
           />
+        </div>
         </div>
       )}
     </div>

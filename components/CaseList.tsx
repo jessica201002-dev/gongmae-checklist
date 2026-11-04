@@ -1,6 +1,6 @@
 // Design Ref: §7.1, §7.3, §7.4 — 물건 목록. 물건을 누르면 상세(체크리스트)가 열리고,
 // 담당자에게는 삭제 버튼도 보인다. 팀장·부점장에게는 목록만 보인다(열람 전용). 등록 순으로 보여 준다.
-import StatusBadge from "@/components/StatusBadge";
+import StatusBadge, { ReviewBadge } from "@/components/StatusBadge";
 import type { CaseView } from "@/lib/caseView";
 import { formatYmdWithWeekday } from "@/lib/dateFormat";
 
@@ -8,6 +8,7 @@ export default function CaseList({
   cases,
   selectedId,
   editable,
+  showReviewBadge,
   deletingId,
   onSelect,
   onDelete,
@@ -15,6 +16,8 @@ export default function CaseList({
   cases: CaseView[];
   selectedId: string | null;
   editable: boolean;
+  /** 팀장·부점장 화면에서 미완료 물건에 "검토 필요" 배지를 보여 줄지 */
+  showReviewBadge: boolean;
   deletingId: string | null;
   onSelect: (id: string) => void;
   onDelete: (item: CaseView) => void;
@@ -51,6 +54,7 @@ export default function CaseList({
                 <span className="rounded bg-surface px-2 py-0.5 text-xs text-muted">
                   구분값 {item.ownerCode}
                 </span>
+                {showReviewBadge && !item.isComplete && <ReviewBadge />}
                 <StatusBadge status={item.deadlineStatus} />
                 {item.isComplete && (
                   <span className="text-xs font-semibold text-ok-fg">

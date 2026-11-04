@@ -13,6 +13,8 @@
   --danger-bg: #fde0e0;
   --danger-fg: #a11a1a;
   --ok-fg: #1d6b34;
+  --info-bg: #dce8ff;
+  --info-fg: #17387f;
 }
 
 @theme inline {
@@ -28,6 +30,8 @@
   --color-danger-bg: var(--danger-bg);
   --color-danger-fg: var(--danger-fg);
   --color-ok-fg: var(--ok-fg);
+  --color-info-bg: var(--info-bg);
+  --color-info-fg: var(--info-fg);
   /* 한글이 잘 보이도록 시스템 한글 글꼴을 먼저 쓴다 */
   --font-sans: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic",
     "Noto Sans KR", system-ui, sans-serif;
@@ -48,6 +52,8 @@
     --danger-bg: #4a1a1a;
     --danger-fg: #ff9b9b;
     --ok-fg: #7fd69a;
+    --info-bg: #1a2d52;
+    --info-fg: #b4cfff;
   }
 }
 
