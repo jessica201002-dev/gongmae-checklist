@@ -1,7 +1,8 @@
 "use client";
 
 // Design Ref: §7.1, §7.3 — 화면 위쪽의 역할 전환 버튼 (담당자 / 팀장 / 부점장)
-import { ROLES, getRoleInfo, setRole, useRole } from "@/lib/role";
+import { ROLES, getRoleInfo } from "@/lib/role";
+import { setRole, useRole } from "@/lib/useRole";
 
 export default function RoleSwitcher() {
   const role = useRole();

@@ -6,3 +6,18 @@ export type CheckStatus = "done" | "na";
 
 /** 항목 하나의 상태: 저장된 값이 없으면 null(미완료) */
 export type ItemState = CheckStatus | null;
+
+// Design Ref: §5.1 — 저장된 물건 한 건. 날짜는 "YYYY-MM-DD" 문자열로 다룬다.
+export interface CaseRecord {
+  id: string;
+  /** 물건번호 (중복 불가, 최대 50자) */
+  caseNo: string;
+  /** 담당자 구분값 (이름·사번이 아닌 임의의 코드, 최대 20자) */
+  ownerCode: string;
+  /** 낙찰일. 아직 입력하지 않았으면 null */
+  bidDate: string | null;
+  /** 송달 등기번호 (최대 30자). 없으면 null */
+  deliveryRegNo: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
