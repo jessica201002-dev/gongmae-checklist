@@ -8,6 +8,11 @@
   --surface: #f2f3f5;
   --notice-bg: #fff4d6;
   --notice-fg: #6b4a00;
+  --warn-bg: #ffe9b8;
+  --warn-fg: #6b4a00;
+  --danger-bg: #fde0e0;
+  --danger-fg: #a11a1a;
+  --ok-fg: #1d6b34;
 }
 
 @theme inline {
@@ -18,6 +23,11 @@
   --color-surface: var(--surface);
   --color-notice-bg: var(--notice-bg);
   --color-notice-fg: var(--notice-fg);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-fg: var(--warn-fg);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-fg: var(--danger-fg);
+  --color-ok-fg: var(--ok-fg);
   /* 한글이 잘 보이도록 시스템 한글 글꼴을 먼저 쓴다 */
   --font-sans: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic",
     "Noto Sans KR", system-ui, sans-serif;
@@ -33,6 +43,11 @@
     --surface: #17191d;
     --notice-bg: #3a2e0f;
     --notice-fg: #ffe6a3;
+    --warn-bg: #4a3a0c;
+    --warn-fg: #ffe08a;
+    --danger-bg: #4a1a1a;
+    --danger-fg: #ff9b9b;
+    --ok-fg: #7fd69a;
   }
 }
 
