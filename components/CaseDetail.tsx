@@ -10,6 +10,7 @@ import { CHECKLIST_ITEMS, type ItemKey } from "@/lib/checklist";
 import { formatYmdWithWeekday } from "@/lib/dateFormat";
 import { canEdit, type Role } from "@/lib/role";
 import type { ItemState } from "@/lib/types";
+import { DELIVERY_REG_NO_MAX } from "@/lib/validation";
 
 const OPTIONS: { value: ItemState; label: string }[] = [
   { value: null, label: "미완료" },
@@ -60,6 +61,12 @@ export default function CaseDetail({
   const [bidError, setBidError] = useState<string | null>(null);
   const [bidNotice, setBidNotice] = useState<string | null>(null);
   const bidInputId = useId();
+  // 송달 등기번호: 입력 중인 값과 저장 상태 (Design Ref: §7.4 — 송달 여부 확인 항목의 등기번호 입력란)
+  const [regNoDraft, setRegNoDraft] = useState(item?.deliveryRegNo ?? "");
+  const [savingRegNo, setSavingRegNo] = useState(false);
+  const [regNoError, setRegNoError] = useState<string | null>(null);
+  const [regNoNotice, setRegNoNotice] = useState<string | null>(null);
+  const regNoInputId = useId();
   const editable = canEdit(role);
 
   if (!item) {
@@ -86,8 +93,9 @@ export default function CaseDetail({
   const caseId = item.id;
   const incompleteCount = item.totalCount - item.completedCount;
   // 응답 순서에 따라 오래된 값이 덮어쓰지 않도록, 저장 중에는 다른 저장을 받지 않는다
-  const busy = pending !== null || savingBid;
+  const busy = pending !== null || savingBid || savingRegNo;
   const bidDirty = draft !== (item.bidDate ?? "");
+  const regNoDirty = regNoDraft.trim() !== (item.deliveryRegNo ?? "");
   const draftIssue = bidDateProblem(draft);
 
   async function handleChange(itemKey: ItemKey, state: ItemState) {
@@ -133,6 +141,29 @@ export default function CaseDetail({
       setBidError(err instanceof ApiClientError ? err.message : GENERIC_ERROR);
     } finally {
       setSavingBid(false);
+    }
+  }
+
+  /** 송달 등기번호 저장. next가 null이면 지운다 */
+  async function saveRegNo(next: string | null) {
+    if (busy) return;
+    setSavingRegNo(true);
+    setRegNoError(null);
+    setRegNoNotice(null);
+    try {
+      const updated = await callApi<CaseView>(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        role,
+        body: { deliveryRegNo: next },
+      });
+      onUpdated(updated);
+      setRegNoDraft(updated.deliveryRegNo ?? "");
+      setRegNoNotice(next ? "등기번호를 저장했습니다." : "등기번호를 지웠습니다.");
+    } catch (err) {
+      // 저장하지 못해도 입력한 값은 그대로 둔다
+      setRegNoError(err instanceof ApiClientError ? err.message : GENERIC_ERROR);
+    } finally {
+      setSavingRegNo(false);
     }
   }
 
@@ -320,6 +351,71 @@ export default function CaseDetail({
                   </span>
                 </div>
               )}
+              {check.hasRegNoField &&
+                (editable ? (
+                  <div className="flex flex-col gap-2 border-t border-border pt-3">
+                    <label htmlFor={regNoInputId} className="text-sm font-medium">
+                      송달 등기번호
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        id={regNoInputId}
+                        type="text"
+                        value={regNoDraft}
+                        onChange={(event) => {
+                          setRegNoDraft(event.target.value);
+                          setRegNoNotice(null);
+                          setRegNoError(null);
+                        }}
+                        maxLength={DELIVERY_REG_NO_MAX}
+                        autoComplete="off"
+                        disabled={busy}
+                        placeholder={`등기번호 (최대 ${DELIVERY_REG_NO_MAX}자)`}
+                        className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-60"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          saveRegNo(regNoDraft.trim() === "" ? null : regNoDraft.trim())
+                        }
+                        disabled={busy || !regNoDirty}
+                        className="min-h-11 rounded-md border border-foreground bg-foreground px-4 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50"
+                      >
+                        {savingRegNo ? "저장 중..." : "저장"}
+                      </button>
+                      {item.deliveryRegNo && (
+                        <button
+                          type="button"
+                          onClick={() => saveRegNo(null)}
+                          disabled={busy}
+                          className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50"
+                        >
+                          등기번호 지우기
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted">
+                      등기번호만 입력하세요. 이름·연락처 등 다른 개인정보는 함께 적지 마세요.
+                    </p>
+                    {regNoError && (
+                      <p role="alert" className="text-sm font-medium text-danger-fg">
+                        {regNoError}
+                      </p>
+                    )}
+                    <p aria-live="polite" className="min-h-4 text-xs text-muted">
+                      {regNoNotice}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="border-t border-border pt-3 text-sm">
+                    <span className="font-medium">송달 등기번호</span>{" "}
+                    {item.deliveryRegNo ? (
+                      <span className="break-all">{item.deliveryRegNo}</span>
+                    ) : (
+                      <span className="text-muted">입력된 등기번호가 없습니다.</span>
+                    )}
+                  </p>
+                ))}
               {rowError && (
                 <p role="alert" className="text-sm font-medium text-danger-fg">
                   {rowError}
