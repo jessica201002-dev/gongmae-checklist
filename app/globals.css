@@ -3,24 +3,41 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --muted: #5f6368;
+  --border: #d0d3d9;
+  --surface: #f2f3f5;
+  --notice-bg: #fff4d6;
+  --notice-fg: #6b4a00;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-notice-bg: var(--notice-bg);
+  --color-notice-fg: var(--notice-fg);
+  /* 한글이 잘 보이도록 시스템 한글 글꼴을 먼저 쓴다 */
+  --font-sans: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic",
+    "Noto Sans KR", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --muted: #a3a7ae;
+    --border: #33363c;
+    --surface: #17191d;
+    --notice-bg: #3a2e0f;
+    --notice-fg: #ffe6a3;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
