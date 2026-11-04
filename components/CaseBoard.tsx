@@ -30,6 +30,8 @@ export default function CaseBoard() {
   // 물건을 눌렀을 때 상세 제목으로 초점을 옮겨(좁은 화면에서는 스크롤도 따라간다) 키보드·화면 낭독 사용자도 바뀐 것을 알 수 있게 한다
   const [focusRequest, setFocusRequest] = useState(0);
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
+  // 삭제하면 누른 버튼이 사라지므로, 결과 안내 문구로 초점을 옮겨 키보드 사용자가 위치를 잃지 않게 한다
+  const noticeRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +99,7 @@ export default function CaseBoard() {
       setCases((prev) => (prev ?? []).filter((c) => c.id !== item.id));
       setSelectedId((current) => (current === item.id ? null : current));
       setNotice(`${item.caseNo} 물건을 삭제했습니다.`);
+      noticeRef.current?.focus();
     } catch (err) {
       setActionError(
         err instanceof ApiClientError
@@ -130,7 +133,12 @@ export default function CaseBoard() {
     <div className="flex flex-col gap-4">
       {editable && <CaseForm role={role} onCreated={handleCreated} />}
 
-      <p aria-live="polite" className="min-h-5 text-sm text-muted">
+      <p
+        ref={noticeRef}
+        tabIndex={-1}
+        aria-live="polite"
+        className="min-h-5 text-sm text-muted outline-none"
+      >
         {notice}
       </p>
       {actionError && (

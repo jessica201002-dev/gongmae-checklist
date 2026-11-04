@@ -2,7 +2,7 @@
 
 // Design Ref: §7.1, §7.3, §7.4 — 물건 상세: 낙찰일·매각결정기일·기한 상태 + 매각결정 체크리스트 6개 항목.
 // 담당자는 낙찰일을 입력하고 항목마다 미완료 / 완료 / 해당 없음을 고르며, 팀장·부점장은 읽기만 한다.
-import { useId, useState, type Ref } from "react";
+import { useId, useRef, useState, type Ref } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
@@ -67,6 +67,10 @@ export default function CaseDetail({
   const [regNoError, setRegNoError] = useState<string | null>(null);
   const [regNoNotice, setRegNoNotice] = useState<string | null>(null);
   const regNoInputId = useId();
+  // 저장 중에는 입력칸·버튼을 disabled로 막지 않는다. disabled가 되면 키보드 초점이 사라지기 때문이다.
+  // 대신 눌러도 무시하고(aria-disabled), 값을 지워서 버튼이 사라질 때는 입력칸으로 초점을 옮긴다.
+  const bidInputRef = useRef<HTMLInputElement>(null);
+  const regNoInputRef = useRef<HTMLInputElement>(null);
   const editable = canEdit(role);
 
   if (!item) {
@@ -97,6 +101,8 @@ export default function CaseDetail({
   const bidDirty = draft !== (item.bidDate ?? "");
   const regNoDirty = regNoDraft.trim() !== (item.deliveryRegNo ?? "");
   const draftIssue = bidDateProblem(draft);
+  const bidSaveBlocked = busy || !bidDirty || draftIssue !== null;
+  const regNoSaveBlocked = busy || !regNoDirty;
 
   async function handleChange(itemKey: ItemKey, state: ItemState) {
     if (busy) return;
@@ -136,6 +142,8 @@ export default function CaseDetail({
       onUpdated(updated);
       setDraft(updated.bidDate ?? "");
       setBidNotice(next ? "낙찰일을 저장했습니다." : "낙찰일을 지웠습니다.");
+      // "낙찰일 지우기" 버튼이 사라지므로, 이어서 입력할 수 있게 입력칸으로 초점을 옮긴다
+      if (next === null) bidInputRef.current?.focus();
     } catch (err) {
       // 저장하지 못해도 입력한 값은 그대로 둔다
       setBidError(err instanceof ApiClientError ? err.message : GENERIC_ERROR);
@@ -159,6 +167,8 @@ export default function CaseDetail({
       onUpdated(updated);
       setRegNoDraft(updated.deliveryRegNo ?? "");
       setRegNoNotice(next ? "등기번호를 저장했습니다." : "등기번호를 지웠습니다.");
+      // "등기번호 지우기" 버튼이 사라지므로, 이어서 입력할 수 있게 입력칸으로 초점을 옮긴다
+      if (next === null) regNoInputRef.current?.focus();
     } catch (err) {
       // 저장하지 못해도 입력한 값은 그대로 둔다
       setRegNoError(err instanceof ApiClientError ? err.message : GENERIC_ERROR);
@@ -197,20 +207,25 @@ export default function CaseDetail({
                 type="date"
                 min={BID_DATE_MIN}
                 max={BID_DATE_MAX}
+                ref={bidInputRef}
                 value={draft}
                 onChange={(event) => {
+                  if (busy) return;
                   setDraft(event.target.value);
                   setBidNotice(null);
                   setBidError(null);
                 }}
-                disabled={busy}
-                className="min-h-11 rounded-md border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-60"
+                aria-busy={savingBid}
+                className="min-h-11 rounded-md border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
               />
               <button
                 type="button"
-                onClick={() => saveBidDate(draft === "" ? null : draft)}
-                disabled={busy || !bidDirty || draftIssue !== null}
-                className="min-h-11 rounded-md border border-foreground bg-foreground px-4 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50"
+                onClick={() => {
+                  if (bidSaveBlocked) return;
+                  saveBidDate(draft === "" ? null : draft);
+                }}
+                aria-disabled={bidSaveBlocked}
+                className="min-h-11 rounded-md border border-foreground bg-foreground px-4 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
               >
                 {savingBid ? "저장 중..." : "저장"}
               </button>
@@ -218,8 +233,8 @@ export default function CaseDetail({
                 <button
                   type="button"
                   onClick={() => saveBidDate(null)}
-                  disabled={busy}
-                  className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50"
+                  aria-disabled={busy}
+                  className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
                 >
                   낙찰일 지우기
                 </button>
@@ -310,12 +325,14 @@ export default function CaseDetail({
                   <legend className="text-sm font-medium">{check.label}</legend>
                   <div className="flex flex-wrap gap-2">
                     {OPTIONS.map((option) => (
-                      <label key={option.label} className="cursor-pointer">
+                      <label
+                        key={option.label}
+                        className={"cursor-pointer " + (busy ? "opacity-60" : "")}
+                      >
                         <input
                           type="radio"
                           name={`${caseId}-${check.key}`}
                           checked={shown === option.value}
-                          disabled={busy}
                           onChange={() => handleChange(check.key, option.value)}
                           className="peer sr-only"
                         />
@@ -360,6 +377,7 @@ export default function CaseDetail({
                     <div className="flex flex-wrap items-center gap-2">
                       <input
                         id={regNoInputId}
+                        ref={regNoInputRef}
                         type="text"
                         value={regNoDraft}
                         onChange={(event) => {
@@ -369,17 +387,18 @@ export default function CaseDetail({
                         }}
                         maxLength={DELIVERY_REG_NO_MAX}
                         autoComplete="off"
-                        disabled={busy}
+                        readOnly={busy}
                         placeholder={`등기번호 (최대 ${DELIVERY_REG_NO_MAX}자)`}
-                        className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-60"
+                        className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground read-only:opacity-60"
                       />
                       <button
                         type="button"
-                        onClick={() =>
-                          saveRegNo(regNoDraft.trim() === "" ? null : regNoDraft.trim())
-                        }
-                        disabled={busy || !regNoDirty}
-                        className="min-h-11 rounded-md border border-foreground bg-foreground px-4 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50"
+                        onClick={() => {
+                          if (regNoSaveBlocked) return;
+                          saveRegNo(regNoDraft.trim() === "" ? null : regNoDraft.trim());
+                        }}
+                        aria-disabled={regNoSaveBlocked}
+                        className="min-h-11 rounded-md border border-foreground bg-foreground px-4 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
                       >
                         {savingRegNo ? "저장 중..." : "저장"}
                       </button>
@@ -387,8 +406,8 @@ export default function CaseDetail({
                         <button
                           type="button"
                           onClick={() => saveRegNo(null)}
-                          disabled={busy}
-                          className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-50"
+                          aria-disabled={busy}
+                          className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
                         >
                           등기번호 지우기
                         </button>

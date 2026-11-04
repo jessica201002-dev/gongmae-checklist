@@ -17,7 +17,7 @@ export default function OwnerFilter({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <label htmlFor={selectId} className="text-sm font-medium">
-        담당자 구분값
+        구분값별로 보기
       </label>
       <select
         id={selectId}

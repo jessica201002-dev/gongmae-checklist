@@ -77,10 +77,13 @@ export default function CaseList({
             {editable && (
               <button
                 type="button"
-                onClick={() => onDelete(item)}
-                disabled={deletingId === item.id}
+                onClick={() => {
+                  if (deletingId === item.id) return;
+                  onDelete(item);
+                }}
+                aria-disabled={deletingId === item.id}
                 aria-label={`${item.caseNo} 물건 삭제`}
-                className="min-h-11 self-start rounded-md border border-border px-4 text-sm font-medium text-danger-fg hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground disabled:opacity-60 sm:self-center"
+                className="min-h-11 self-start rounded-md border border-border px-4 text-sm font-medium text-danger-fg hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:opacity-60 sm:self-center"
               >
                 {deletingId === item.id ? "삭제 중..." : "삭제"}
               </button>
