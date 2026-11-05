@@ -17,6 +17,9 @@ export type SessionState =
   | { status: "anon" }
   | { status: "authed"; user: ClientUser };
 
+// 서버에서 그릴 때 쓰는 값. 매번 새 객체를 만들면 React가 무한 반복으로 보고 경고하므로 하나를 재사용한다
+const SERVER_STATE: SessionState = { status: "loading" };
+
 let state: SessionState = { status: "loading" };
 let started = false;
 const listeners = new Set<() => void>();
@@ -53,7 +56,7 @@ function subscribe(onChange: () => void): () => void {
 
 /** 지금 로그인 상태. 서버에서 그릴 때는 항상 "확인 중"이다 */
 export function useSession(): SessionState {
-  return useSyncExternalStore(subscribe, () => state, () => ({ status: "loading" }) as SessionState);
+  return useSyncExternalStore(subscribe, () => state, () => SERVER_STATE);
 }
 
 /** 서버가 "로그인이 필요합니다"(401)라고 했을 때 화면의 로그인 상태를 지운다 */

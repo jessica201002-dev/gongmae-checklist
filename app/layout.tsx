@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import AccountBar from "@/components/AccountBar";
 import "./globals.css";
 
@@ -18,9 +19,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="border-b border-line bg-card/85 backdrop-blur">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <h1 className="flex items-center gap-3 text-lg font-semibold tracking-tight">
-              <span
-                aria-hidden="true"
-                className="inline-block h-7 w-7 rounded-lg bg-linear-to-br from-[#bd4468] via-[#9d4f72] to-[#ff5a1f] shadow-[0_4px_12px_rgba(173,53,91,0.35)]"
+              {/* 회사 로고. 어두운 화면에서도 남색 글자가 보이도록 흰 바탕을 깔았다 */}
+              <Image
+                src="/logo.png"
+                alt="한국자산관리공사 로고"
+                width={56}
+                height={36}
+                priority
+                className="h-9 w-auto rounded-md bg-white px-1.5 py-0.5 shadow-sm"
               />
               압류재산 공매업무 체크리스트
             </h1>

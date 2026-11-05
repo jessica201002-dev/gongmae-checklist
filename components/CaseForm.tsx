@@ -38,7 +38,7 @@ export default function CaseForm({
       return;
     }
     if (!CASE_NO_PATTERN.test(caseNo.trim())) {
-      setError(`물건번호는 ${CASE_NO_FORMAT_HINT} 형식으로 입력해 주세요. (예: 2026-00123-001)`);
+      setError(`물건번호는 ${CASE_NO_FORMAT_HINT} 형식으로 입력해 주세요. (예: 2026-01234-001)`);
       return;
     }
     setSubmitting(true);
@@ -85,11 +85,11 @@ export default function CaseForm({
             autoComplete="off"
             inputMode="numeric"
             aria-describedby={`${caseNoId}-hint`}
-            placeholder="예: 2026-00123-001"
+            placeholder="예: 2026-01234-001"
             className={inputClass}
           />
           <span id={`${caseNoId}-hint`} className="text-xs text-muted">
-            앞 4자리는 연도, 가운데 5자리는 번호, 뒤 3자리는 구분번호입니다.
+            앞 4자리는 연도, 가운데 5자리는 공고번호(첫 자리는 0 또는 1), 뒤 3자리는 구분번호입니다.
           </span>
         </div>
         <div className="flex flex-1 flex-col gap-1">

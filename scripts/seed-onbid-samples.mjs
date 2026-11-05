@@ -1,7 +1,7 @@
 // Design Ref: §10.3 — 온비드 가상 조회 시험용 샘플 물건 넣기.
 //
 // 사용법 (프로젝트 폴더에서):
-//   npm run seed:onbid          가상 물건번호(2026-90001-001 같은 연도-공고번호-구분번호)로 물건 6개를 (다시) 만든다. 낙찰일은 비워 두고,
+//   npm run seed:onbid          가상 물건번호(2026-19001-001 같은 연도-공고번호-구분번호)로 물건 6개를 (다시) 만든다. 낙찰일은 비워 두고,
 //                               화면에서 "온비드에서 낙찰일 조회"를 눌러 채우도록 한다.
 //   npm run seed:onbid:clear    아래 가상 물건번호의 물건만 지운다.
 //   node scripts/seed-onbid-samples.mjs --dry-run   표는 건드리지 않고 만들 내용만 보여 준다.
@@ -27,18 +27,20 @@ const CLEAR_ONLY = args.has("--clear");
 const LEGACY_NUMBERS = [
   "9001-00001-001", "9001-00002-001", "9001-00003-001",
   "9001-00004-001", "9001-00005-001", "9001-00006-001",
+  "2026-90001-001", "2026-90001-002", "2025-90002-001",
+  "2025-90002-002", "2024-90003-001", "2024-90003-002",
 ];
 
 // 가상 물건번호별로 맡을 담당자 구분값과 미리 완료해 둘 체크 항목
 // (항목 이름표: delivery, benefit, appraisal, area_match, suspension_doc, field_survey)
 const done = (...keys) => Object.fromEntries(keys.map((k) => [k, "done"]));
 const PLAN = {
-  "2026-90001-001": { owner: "담당-01", checks: done("delivery", "benefit") },
-  "2026-90001-002": { owner: "담당-02", checks: { ...done("delivery", "appraisal", "area_match"), benefit: "na" } },
-  "2025-90002-001": { owner: "담당-03", checks: {} },
-  "2025-90002-002": { owner: "담당-01", checks: done("delivery") },
-  "2024-90003-001": { owner: "담당-02", checks: done("delivery", "benefit", "appraisal", "area_match", "suspension_doc") },
-  "2024-90003-002": { owner: "담당-03", checks: { ...done("delivery", "benefit", "appraisal", "suspension_doc", "field_survey"), area_match: "na" } },
+  "2026-19001-001": { owner: "담당-01", checks: done("delivery", "benefit") },
+  "2026-19001-002": { owner: "담당-02", checks: { ...done("delivery", "appraisal", "area_match"), benefit: "na" } },
+  "2025-19002-001": { owner: "담당-03", checks: {} },
+  "2025-19002-002": { owner: "담당-01", checks: done("delivery") },
+  "2024-19003-001": { owner: "담당-02", checks: done("delivery", "benefit", "appraisal", "area_match", "suspension_doc") },
+  "2024-19003-002": { owner: "담당-03", checks: { ...done("delivery", "benefit", "appraisal", "suspension_doc", "field_survey"), area_match: "na" } },
 };
 
 // lib/onbidMock.ts(와 그것이 쓰는 파일)를 임시 폴더(node_modules/.cache, Git에 올라가지 않음)에서 JavaScript로 바꿔 불러온다

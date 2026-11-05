@@ -2,6 +2,7 @@
 
 // 로그인 화면의 입력 폼. 아이디·비밀번호를 서버로 보내 확인하고, 성공하면 첫 화면으로 이동한다.
 // 실패 문구는 아이디가 틀렸는지 비밀번호가 틀렸는지 알려 주지 않는다.
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { login, useSession } from "@/lib/useSession";
@@ -48,6 +49,15 @@ export default function LoginForm() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 py-6 sm:py-12">
       <div className="reveal flex flex-col gap-2">
+        {/* 회사 로고 (어두운 화면에서도 보이도록 흰 바탕) */}
+        <Image
+          src="/logo.png"
+          alt="한국자산관리공사 로고"
+          width={112}
+          height={72}
+          priority
+          className="mb-2 h-[72px] w-auto self-start rounded-lg bg-white px-3 py-1.5 shadow-sm"
+        />
         <p className="text-xs font-semibold tracking-[0.18em] text-muted">
           압류재산 공매업무 · 매각결정 단계
         </p>
