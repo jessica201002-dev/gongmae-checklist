@@ -36,4 +36,4 @@ export const ONBID_UNAVAILABLE_MESSAGES: Record<OnbidUnavailableReason, string> 
 };
 
 export const ONBID_NOT_FOUND_MESSAGE =
-  `온비드에서 이 물건번호의 낙찰 결과를 찾지 못했습니다. 아직 낙찰 전이거나 번호가 온비드 물건관리번호와 다를 수 있습니다. ${MANUAL}`;
+  `온비드의 최근 3년 압류재산 입찰 결과에서 이 물건번호를 찾지 못했습니다. 아직 개찰 전이거나 번호가 온비드 물건관리번호와 다를 수 있습니다. ${MANUAL}`;

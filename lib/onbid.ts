@@ -1,25 +1,21 @@
 // Design Ref: §3.3, §6, §9 — 온비드 공개 정보 조회(단방향, 서버 전용).
-// 공공데이터포털 "차세대 온비드 물건 입찰결과상세 조회서비스"를 물건번호로 호출해 읽어 오기만 한다.
-// 앱의 내용은 보내지 않고(요청에는 물건번호와 인증키만 쓴다), 인증키는 .env에서만 읽어 응답·기록에 남기지 않는다.
+// 공공데이터포털 "차세대 온비드 물건 입찰결과목록 조회서비스"를 물건번호(물건관리번호)로 호출해 읽어 오기만 한다.
+// 앱의 내용은 보내지 않고(요청에는 물건번호·조회 기간·인증키만 쓴다), 인증키는 .env에서만 읽어 응답·기록에 남기지 않는다.
 import "server-only";
 
 const ENDPOINT =
-  "https://apis.data.go.kr/B010003/OnbidCltrBidRsltDtlSrvc2/getCltrBidRsltDtl2";
+  "https://apis.data.go.kr/B010003/OnbidCltrBidRsltListSrvc2/getCltrBidRsltList2";
 const TIMEOUT_MS = 8000;
+// 이 서비스의 필수 조건: 물건유형코드(0001), 재산유형코드(0007 = 압류재산), 개찰일 시작·종료(종료는 오늘까지만 가능)
+const CLTR_TYPE_CD = "0001";
+const PRPT_DIV_CD = "0007";
+const LOOKBACK_YEARS = 3;
 
+import { todayInSeoul } from "./deadline";
 import { findOnbidSample } from "./onbidMock";
 import type { OnbidLookupResult, OnbidUnavailableReason } from "./onbidTypes";
 
 export type { OnbidLookupResult, OnbidUnavailableReason };
-
-// 응답 필드 대응표. 실제 응답을 받아 본 뒤 확정한다(작업 14).
-// 인증키가 승인되기 전에는 응답 모양을 확인할 수 없어 비워 둔다. 비어 있으면 "mapping_pending"으로 처리한다.
-const FIELD_MAP: {
-  /** 낙찰일이 들어 있는 필드 이름 */
-  bidDate?: string;
-  /** 화면에 보여 줄 공개 항목: [온비드 필드 이름, 화면 이름표] */
-  info: [string, string][];
-} = { info: [] };
 
 type Json = Record<string, unknown>;
 
@@ -45,7 +41,7 @@ function extractItems(body: Json): Json[] {
   return [];
 }
 
-/** "20261105", "2026-11-05", "2026-11-05 10:00:00" 같은 값을 "YYYY-MM-DD"로 바꾼다. 알 수 없으면 null */
+/** "20261029", "202610291100", "2026-10-29", "2026-10-29 10:00:00" 같은 값을 "YYYY-MM-DD"로 바꾼다. 알 수 없으면 null */
 function toYmd(value: unknown): string | null {
   if (typeof value !== "string" && typeof value !== "number") return null;
   const text = String(value).trim();
@@ -55,11 +51,39 @@ function toYmd(value: unknown): string | null {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 }
 
+/** 개찰일시 "202610291100" → "2026-10-29 11:00". 시각이 없으면 날짜만 */
+function toYmdHm(value: unknown): string | null {
+  const ymd = toYmd(value);
+  if (!ymd) return null;
+  const hm = String(value).trim().match(/^\d{8}(\d{2})(\d{2})/);
+  return hm ? `${ymd} ${hm[1]}:${hm[2]}` : ymd;
+}
+
+function text(value: unknown): string | null {
+  return (typeof value === "string" || typeof value === "number") && String(value).trim() !== ""
+    ? String(value).trim()
+    : null;
+}
+
+function won(value: unknown): string | null {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) && n > 0 ? `${n.toLocaleString("ko-KR")}원` : null;
+}
+
+/** 같은 물건번호의 여러 회차 중 보여 줄 한 건을 고른다: "낙찰" 건이 있으면 그중 가장 최근, 없으면 가장 최근 건 */
+function pickItem(items: Json[]): Json {
+  const byRecent = [...items].sort((a, b) =>
+    String(b.cltrOpbdDt ?? "").localeCompare(String(a.cltrOpbdDt ?? "")),
+  );
+  return byRecent.find((it) => text(it.pbctStatNm) === "낙찰") ?? byRecent[0];
+}
+
 /**
  * 응답 본문(JSON)을 조회 결과로 바꾼다. 네트워크와 무관한 순수 함수라 따로 시험할 수 있다.
- * 개인을 알 수 있는 값이 있어도 FIELD_MAP에 적은 공개 항목만 꺼내므로 나머지는 버려진다.
+ * 화면에 보여 줄 공개 항목(물건명·용도·감정가·개찰일시·입찰 결과·회차)만 꺼내므로 나머지는 버려진다.
+ * 낙찰일은 입찰 결과가 "낙찰"인 건의 개찰일만 쓴다. 유찰·취소 건은 낙찰일이 없는 것으로 본다.
  */
-export function parseOnbidResponse(json: unknown): OnbidLookupResult {
+export function parseOnbidResponse(json: unknown, caseNo?: string): OnbidLookupResult {
   if (!isObject(json)) return { status: "unavailable", reason: "upstream_error" };
 
   // 포털 공통 오류 형식: { OpenAPI_ServiceResponse: { cmmMsgHeader: { returnReasonCode } } }
@@ -69,32 +93,40 @@ export function parseOnbidResponse(json: unknown): OnbidLookupResult {
     return { status: "unavailable", reason: reasonFromPortalCode(code) };
   }
 
+  // 결과 없음 형식: { result: { resultCode: "03", resultMsg: "NODATA_ERROR" } }
+  if (isObject(json.result) && String(json.result.resultCode ?? "") === "03") {
+    return { status: "not_found" };
+  }
+
   const root = isObject(json.response) ? json.response : json;
   const header = isObject(root.header) ? root.header : null;
   const body = isObject(root.body) ? root.body : null;
 
   const resultCode = header ? String(header.resultCode ?? "") : "";
+  if (header && resultCode === "03") return { status: "not_found" };
   if (header && resultCode !== "" && resultCode !== "00" && resultCode !== "0") {
     return { status: "unavailable", reason: reasonFromPortalCode(resultCode) };
   }
   if (!body) return { status: "unavailable", reason: "upstream_error" };
 
-  const items = extractItems(body);
+  let items = extractItems(body);
+  // 요청한 물건번호와 같은 건만 쓴다 (거르기가 안 된 응답이 와도 다른 물건을 보여 주지 않도록)
+  if (caseNo) items = items.filter((it) => text(it.cltrMngNo) === caseNo.trim());
   if (items.length === 0) return { status: "not_found" };
 
-  if (!FIELD_MAP.bidDate && FIELD_MAP.info.length === 0) {
-    return { status: "unavailable", reason: "mapping_pending" };
-  }
+  const first = pickItem(items);
+  const status = text(first.pbctStatNm);
+  const bidDate = status === "낙찰" ? toYmd(first.cltrOpbdDt) : null;
 
-  const first = items[0];
-  const bidDate = FIELD_MAP.bidDate ? toYmd(first[FIELD_MAP.bidDate]) : null;
-  const info: { label: string; value: string }[] = [];
-  for (const [field, label] of FIELD_MAP.info) {
-    const value = first[field];
-    if ((typeof value === "string" || typeof value === "number") && String(value).trim() !== "") {
-      info.push({ label, value: String(value).trim() });
-    }
-  }
+  const rows: [string, string | null][] = [
+    ["물건명", text(first.onbidCltrNm)],
+    ["재산·처분", [text(first.prptDivNm), text(first.dspsMthodNm)].filter(Boolean).join(" · ") || null],
+    ["용도", [text(first.cltrUsgMclsCtgrNm), text(first.cltrUsgSclsCtgrNm)].filter(Boolean).join(" · ") || null],
+    ["감정가", won(first.apslEvlAmt)],
+    ["개찰일시", toYmdHm(first.cltrOpbdDt)],
+    ["입찰 결과", status ? `${status}${text(first.pbctNsq) ? ` (${Number(first.pbctNsq)}회차)` : ""}` : null],
+  ];
+  const info = rows.flatMap(([label, value]) => (value ? [{ label, value }] : []));
   return { status: "found", bidDate, info };
 }
 
@@ -119,15 +151,29 @@ export async function lookupOnbid(caseNo: string): Promise<OnbidLookupResult> {
   return result;
 }
 
+/** "YYYY-MM-DD" → "YYYYMMDD" */
+function compact(ymd: string): string {
+  return ymd.replaceAll("-", "");
+}
+
 async function fetchOnbid(caseNo: string): Promise<OnbidLookupResult> {
   const key = process.env.ONBID_SERVICE_KEY;
   if (!key || key.trim() === "") return { status: "unavailable", reason: "no_key" };
 
+  // 개찰일 종료일은 오늘까지만 가능하다. 최근 3년 안에 개찰된 입찰 결과에서 찾는다.
+  const today = todayInSeoul();
+  const monthDay = today.slice(5) === "02-29" ? "-02-28" : today.slice(4); // 윤년 2월 29일은 28일로
+  const start = `${Number(today.slice(0, 4)) - LOOKBACK_YEARS}${monthDay}`;
+
   const params = new URLSearchParams({
-    serviceKey: key.trim(),
+    serviceKey: key.trim().replace(/^﻿/, ""),
     pageNo: "1",
-    numOfRows: "10",
+    numOfRows: "20",
     resultType: "json",
+    cltrTypeCd: CLTR_TYPE_CD,
+    prptDivCd: PRPT_DIV_CD,
+    opbdDtStart: compact(start),
+    opbdDtEnd: compact(today),
     cltrMngNo: caseNo,
   });
 
@@ -137,18 +183,18 @@ async function fetchOnbid(caseNo: string): Promise<OnbidLookupResult> {
       cache: "no-store",
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    const text = await response.text();
+    const body = await response.text();
     let json: unknown;
     try {
-      json = JSON.parse(text);
+      json = JSON.parse(body);
     } catch {
       // JSON이 아니면(예: XML 오류) 인증키 오류 문구가 들어 있는지만 본다
-      if (/SERVICE_KEY|등록되지 않은/.test(text)) {
+      if (/SERVICE_KEY|등록되지 않은/.test(body)) {
         return { status: "unavailable", reason: "key_rejected" };
       }
       return { status: "unavailable", reason: "upstream_error" };
     }
-    return parseOnbidResponse(json);
+    return parseOnbidResponse(json, caseNo);
   } catch (error) {
     // 오류 내용에 주소(인증키 포함)가 섞일 수 있어 자세한 내용은 남기지 않는다
     const name = error instanceof Error ? error.name : "";
