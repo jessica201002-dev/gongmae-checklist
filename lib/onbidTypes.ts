@@ -13,6 +13,8 @@ export type OnbidUnavailableReason =
 export type OnbidLookupResult =
   | {
       status: "found";
+      /** true이면 실제 온비드가 아니라 시험용 가상(샘플) 결과다 */
+      sample?: true;
       /** 낙찰일 "YYYY-MM-DD". 온비드에 낙찰일이 없으면 null */
       bidDate: string | null;
       /** 화면에 보여 줄 공개 물건 기본 정보 (이름표 → 값) */

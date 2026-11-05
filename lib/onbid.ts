@@ -7,6 +7,7 @@ const ENDPOINT =
   "https://apis.data.go.kr/B010003/OnbidCltrBidRsltDtlSrvc2/getCltrBidRsltDtl2";
 const TIMEOUT_MS = 8000;
 
+import { findOnbidSample } from "./onbidMock";
 import type { OnbidLookupResult, OnbidUnavailableReason } from "./onbidTypes";
 
 export type { OnbidLookupResult, OnbidUnavailableReason };
@@ -105,6 +106,9 @@ const cache = new Map<string, { at: number; result: OnbidLookupResult }>();
 
 /** 물건번호(= 온비드 물건관리번호)로 온비드 공개 정보를 조회한다. 읽기 전용(GET) */
 export async function lookupOnbid(caseNo: string): Promise<OnbidLookupResult> {
+  // 시험용 가상 물건번호는 실제 온비드를 부르지 않고 가상 결과를 돌려준다 (lib/onbidMock.ts)
+  const sample = findOnbidSample(caseNo);
+  if (sample) return sample;
   const hit = cache.get(caseNo);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.result;
   const result = await fetchOnbid(caseNo);

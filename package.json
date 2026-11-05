@@ -9,7 +9,9 @@
     "lint": "eslint",
     "seed": "node scripts/seed.mjs",
     "seed:clear": "node scripts/seed.mjs --clear",
-    "seed:accounts": "node scripts/seed-accounts.mjs"
+    "seed:accounts": "node scripts/seed-accounts.mjs",
+    "seed:onbid": "node scripts/seed-onbid-samples.mjs",
+    "seed:onbid:clear": "node scripts/seed-onbid-samples.mjs --clear"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

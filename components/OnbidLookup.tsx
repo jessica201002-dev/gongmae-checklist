@@ -14,8 +14,8 @@ import {
 const GENERIC_ERROR = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 
 type Outcome =
-  | { kind: "filled"; message: string; info: { label: string; value: string }[] }
-  | { kind: "info"; message: string; info: { label: string; value: string }[] }
+  | { kind: "filled"; message: string; info: { label: string; value: string }[]; sample: boolean }
+  | { kind: "info"; message: string; info: { label: string; value: string }[]; sample: boolean }
   | { kind: "problem"; message: string };
 
 export default function OnbidLookup({
@@ -85,6 +85,11 @@ export default function OnbidLookup({
       >
         {outcome?.message}
       </p>
+      {outcome && outcome.kind !== "problem" && outcome.sample && (
+        <p className="rounded-md bg-notice-bg px-3 py-2 text-xs font-medium text-notice-fg">
+          ※ 가상(샘플) 데이터입니다. 실제 온비드 정보가 아니라 시험용으로 지어낸 값입니다.
+        </p>
+      )}
       {info.length > 0 && (
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-md border border-border bg-background p-3 text-sm">
           {info.map((row) => (
@@ -116,6 +121,7 @@ function describe(
       kind: "info",
       message: "온비드에 낙찰일 정보가 없습니다. 낙찰일은 직접 입력해 주세요.",
       info: result.info,
+      sample: result.sample === true,
     };
   }
   if (!bidDateAllowed(result.bidDate)) {
@@ -123,6 +129,7 @@ function describe(
       kind: "info",
       message: `온비드의 낙찰일(${result.bidDate})은 입력 가능한 범위(2000~2099년) 밖이라 채우지 않았습니다. 낙찰일은 직접 입력해 주세요.`,
       info: result.info,
+      sample: result.sample === true,
     };
   }
   onFill(result.bidDate);
@@ -130,5 +137,6 @@ function describe(
     kind: "filled",
     message: `온비드의 낙찰일 ${result.bidDate}을(를) 입력칸에 채웠습니다. 확인한 뒤 "저장"을 눌러 주세요.`,
     info: result.info,
+    sample: result.sample === true,
   };
 }
