@@ -16,7 +16,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
-        <header className="border-b border-line bg-card/85 backdrop-blur">
+        <header className="app-header border-b border-line bg-card/80 backdrop-blur-md">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <h1 className="flex items-center gap-3 text-lg font-semibold tracking-tight">
               {/* 회사 로고. 어두운 화면에서도 남색 글자가 보이도록 흰 바탕을 깔았다 */}

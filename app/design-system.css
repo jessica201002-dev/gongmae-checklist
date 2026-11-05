@@ -20,13 +20,13 @@
   --warning-light: #fff4e2;
   --danger-light: #fcedef;
 
-  --surface-soft: #f8f8fa;
-  --surface-hover: #f3f1f5;
+  --surface-soft: #f8f6fb;
+  --surface-hover: #f2eff7;
   --text-secondary: #626775;
   --control-border: #8e94a2;
   --control-border-hover: #6b7180;
   --focus-ring: rgba(173, 53, 91, 0.28);
-  --track: #eceef2;
+  --track: #ebe7f2;
 
   --radius-sm: 8px;
   --radius-md: 12px;

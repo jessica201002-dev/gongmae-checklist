@@ -5,15 +5,17 @@
    기존 이름(background, foreground, muted, border, surface …)은 그대로 두고, 카드용 색을 더했다. */
 :root {
   --paper: #ececeb;
-  --background: #f5f6f8;
+  /* 바탕: 아주 연한 라벤더빛 페이퍼. 흰 카드가 또렷하게 떠 보이고, 로즈·퍼플 정체성과 자연스럽게 이어진다 */
+  --background: #f4f2f8;
   --foreground: #222222;
   --card: #ffffff;
   --muted: #5a5f66;
   --border: #c9ccd3; /* 입력칸·버튼 테두리(눈에 잘 띄게) */
-  --line: #e2e3e6; /* 카드·표의 옅은 구분선 */
-  --surface: #f2f3f5;
-  --notice-bg: #fff4d6;
-  --notice-fg: #6b4a00;
+  --line: #e7e4ee; /* 카드·표의 옅은 구분선 */
+  --surface: #f1eef6;
+  /* 안내 띠: 노란색 대신 팔레트의 피치(코랄 계열)로 맞춘다 */
+  --notice-bg: #fdeee4;
+  --notice-fg: #77340f;
   --warn-bg: #ffe9b8;
   --warn-fg: #6b4a00;
   --danger-bg: #fde0e0;
@@ -86,11 +88,42 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   background-color: var(--background);
-  /* 페이퍼 그레이 위에 아주 옅은 로즈·퍼플 빛. 글자 대비에 영향이 없는 정도로만 둔다 */
-  background-image:
-    radial-gradient(ellipse 60% 40% at 8% -6%, rgba(173, 53, 91, 0.07), transparent 70%),
-    radial-gradient(ellipse 50% 36% at 96% 0%, rgba(173, 128, 202, 0.1), transparent 70%);
-  background-repeat: no-repeat;
+  position: relative;
+  isolation: isolate;
+}
+
+/* 바탕의 부드러운 빛 번짐(메시): 로즈·퍼플·코랄·네이비를 아주 옅게 깔고 화면에 고정한다.
+   글자 대비에 영향이 없도록 투명도를 낮게 두었고, 스크롤해도 움직이지 않아 성능 부담이 없다 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 45% at 6% -4%, rgba(173, 53, 91, 0.13), transparent 70%),
+    radial-gradient(ellipse 50% 42% at 98% 2%, rgba(140, 97, 174, 0.15), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 92% 104%, rgba(52, 79, 112, 0.12), transparent 70%),
+    radial-gradient(ellipse 45% 38% at 4% 100%, rgba(221, 82, 60, 0.09), transparent 70%);
+}
+
+/* 헤더 아래의 가는 그라데이션 선: 대시보드의 색 정체성을 화면 전체에 이어 준다 */
+.app-header {
+  position: relative;
+}
+.app-header::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(173, 53, 91, 0.45),
+    rgba(140, 97, 174, 0.45) 55%,
+    rgba(221, 82, 60, 0.35),
+    transparent
+  );
 }
 
 /* ───── 흰색 업무용 카드 (목록·상세·표·폼) ───── */
