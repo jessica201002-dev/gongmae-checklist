@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "node scripts/seed.mjs",
-    "seed:clear": "node scripts/seed.mjs --clear"
+    "seed:clear": "node scripts/seed.mjs --clear",
+    "seed:accounts": "node scripts/seed-accounts.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

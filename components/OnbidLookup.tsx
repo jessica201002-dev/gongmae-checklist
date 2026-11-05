@@ -10,7 +10,6 @@ import {
   ONBID_UNAVAILABLE_MESSAGES,
   type OnbidLookupResult,
 } from "@/lib/onbidTypes";
-import type { Role } from "@/lib/role";
 
 const GENERIC_ERROR = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 
@@ -21,13 +20,11 @@ type Outcome =
 
 export default function OnbidLookup({
   caseId,
-  role,
   blocked,
   bidDateAllowed,
   onFill,
 }: {
   caseId: string;
-  role: Role;
   /** 다른 저장이 진행 중이면 true: 누르지 않게 한다 */
   blocked: boolean;
   /** 낙찰일로 받을 수 있는 날짜인지 (입력칸의 허용 범위) */
@@ -48,7 +45,6 @@ export default function OnbidLookup({
     try {
       const result = await callApi<OnbidLookupResult>(`/api/cases/${caseId}/onbid`, {
         method: "POST",
-        role,
       });
       if (mine !== requestId.current) return;
       setOutcome(describe(result, bidDateAllowed, onFill));

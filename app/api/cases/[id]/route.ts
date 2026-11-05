@@ -1,12 +1,14 @@
-// Design Ref: §6 — GET /api/cases/:id (상세), PATCH (낙찰일·등기번호 저장), DELETE (물건 삭제)
+// Design Ref: §6 — GET /api/cases/:id (상세), PATCH (낙찰일·등기번호 저장), DELETE (물건 삭제). 로그인이 필요하다.
+// 담당자는 자기 구분값의 물건만 다룰 수 있다(다른 구분값의 물건은 "없는 물건"으로 응답한다).
 import type { NextRequest } from "next/server";
 import {
+  authenticate,
   badBody,
+  canAccessCase,
   fail,
   notFound,
   ok,
   readJsonObject,
-  requireStaff,
   toErrorResponse,
 } from "@/lib/api";
 import { buildCaseView } from "@/lib/caseView";
@@ -18,16 +20,18 @@ import {
   validateDeliveryRegNo,
 } from "@/lib/validation";
 
-/** 물건 상세 + 체크 6개. 모든 역할이 볼 수 있다 */
+/** 물건 상세 + 체크 6개. 담당자는 자기 물건만, 팀장·부점장은 모두 볼 수 있다 */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   ctx: RouteContext<"/api/cases/[id]">,
 ) {
+  const auth = authenticate(request);
+  if (auth.response) return auth.response;
   try {
     const { id } = await ctx.params;
     if (!isUuid(id)) return notFound();
     const found = await getCase(id);
-    if (!found) return notFound();
+    if (!found || !canAccessCase(auth.session, found.record.ownerCode)) return notFound();
     return ok(buildCaseView(found.record, found.checks, todayInSeoul()));
   } catch (error) {
     return toErrorResponse(error);
@@ -39,11 +43,13 @@ export async function PATCH(
   request: NextRequest,
   ctx: RouteContext<"/api/cases/[id]">,
 ) {
-  const forbidden = requireStaff(request);
-  if (forbidden) return forbidden;
+  const auth = authenticate(request, { staffOnly: true });
+  if (auth.response) return auth.response;
   try {
     const { id } = await ctx.params;
     if (!isUuid(id)) return notFound();
+    const found = await getCase(id);
+    if (!found || !canAccessCase(auth.session, found.record.ownerCode)) return notFound();
     const body = await readJsonObject(request);
     if (!body) return badBody();
 
@@ -78,11 +84,13 @@ export async function DELETE(
   request: NextRequest,
   ctx: RouteContext<"/api/cases/[id]">,
 ) {
-  const forbidden = requireStaff(request);
-  if (forbidden) return forbidden;
+  const auth = authenticate(request, { staffOnly: true });
+  if (auth.response) return auth.response;
   try {
     const { id } = await ctx.params;
     if (!isUuid(id)) return notFound();
+    const found = await getCase(id);
+    if (!found || !canAccessCase(auth.session, found.record.ownerCode)) return notFound();
     const deleted = await deleteCase(id);
     if (!deleted) return notFound();
     return ok({ id });

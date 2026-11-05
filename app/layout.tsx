@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import RoleSwitcher from "@/components/RoleSwitcher";
+import AccountBar from "@/components/AccountBar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               />
               압류재산 공매업무 체크리스트
             </h1>
-            <RoleSwitcher />
+            <AccountBar />
           </div>
           <p
             role="note"

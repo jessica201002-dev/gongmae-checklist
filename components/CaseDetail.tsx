@@ -114,7 +114,6 @@ export default function CaseDetail({
     try {
       const updated = await callApi<CaseView>(`/api/cases/${caseId}/checks`, {
         method: "PUT",
-        role,
         body: { itemKey, status: state },
       });
       onUpdated(updated);
@@ -139,7 +138,6 @@ export default function CaseDetail({
     try {
       const updated = await callApi<CaseView>(`/api/cases/${caseId}`, {
         method: "PATCH",
-        role,
         body: { bidDate: next },
       });
       onUpdated(updated);
@@ -165,7 +163,6 @@ export default function CaseDetail({
     try {
       const updated = await callApi<CaseView>(`/api/cases/${caseId}`, {
         method: "PATCH",
-        role,
         body: { deliveryRegNo: next },
       });
       onUpdated(updated);
@@ -261,7 +258,6 @@ export default function CaseDetail({
             {/* Plan SC: FR-15~17 — 온비드 공개 정보 조회로 낙찰일을 채운다(저장은 담당자가 확인한 뒤) */}
             <OnbidLookup
               caseId={caseId}
-              role={role}
               blocked={busy}
               bidDateAllowed={(ymd) => bidDateProblem(ymd) === null}
               onFill={(ymd) => {

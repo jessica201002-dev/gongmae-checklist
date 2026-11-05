@@ -1,11 +1,15 @@
 // Design Ref: §6 — 서버 API 공통 도우미: 응답 형식, 역할 확인, 요청 읽기, 오류 응답
 // 성공: { "data": ... }  /  오류: { "error": { "code": "...", "message": "...", "details": {} } }
 import { CaseNotFoundError, DuplicateCaseError } from "./db/cases";
-import { ROLE_HEADER, canEdit, isRole } from "./role";
+import { canEdit } from "./role";
+import { readSession, type SessionUser } from "./session";
 
 export type ApiErrorCode =
   | "VALIDATION_ERROR"
+  | "UNAUTHORIZED"
   | "ROLE_FORBIDDEN"
+  | "ORIGIN_FORBIDDEN"
+  | "RATE_LIMITED"
   | "CASE_NOT_FOUND"
   | "CASE_DUPLICATE"
   | "SERVER_ERROR";
@@ -28,13 +32,50 @@ export function fail(
   );
 }
 
-// Plan SC: FR-07 — 완료 체크·등록·수정·삭제는 담당자만 할 수 있다.
-// ※ 역할은 화면에서 고른 값을 머리글로 받을 뿐이라 진짜 보안은 아니다. (PRD 7번)
-/** 담당자가 아니면 403 응답을, 담당자면 null을 돌려준다 */
-export function requireStaff(request: Request): Response | null {
-  const role = request.headers.get(ROLE_HEADER);
-  if (isRole(role) && canEdit(role)) return null;
-  return fail("ROLE_FORBIDDEN", "담당자만 할 수 있는 작업입니다.", 403);
+// Plan SC: FR-07 — 완료 체크·등록·수정·삭제는 담당자만 할 수 있다. 로그인한 계정의 역할을 서버가 직접 확인한다.
+/** 쓰기 요청(GET·HEAD 외)이 다른 사이트에서 온 것이면 403 응답을, 아니면 null을 돌려준다 */
+export function checkOrigin(request: Request): Response | null {
+  const method = request.method.toUpperCase();
+  if (method === "GET" || method === "HEAD") return null;
+  const origin = request.headers.get("origin");
+  if (!origin) return null;
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  let originHost = "";
+  try {
+    originHost = new URL(origin).host;
+  } catch {
+    // 형식이 이상하면 아래에서 거절한다
+  }
+  return originHost === host
+    ? null
+    : fail("ORIGIN_FORBIDDEN", "허용되지 않은 요청입니다.", 403);
+}
+
+/** 로그인 확인 결과: 사용자 정보 또는 그대로 돌려줄 오류 응답 */
+export type Auth =
+  | { session: SessionUser; response?: undefined }
+  | { session?: undefined; response: Response };
+
+/**
+ * 모든 API의 입구에서 부른다. 로그인하지 않았으면 401, staffOnly인데 담당자가 아니면 403.
+ * 쓰기 요청(GET·HEAD 외)은 다른 사이트에서 온 요청인지도 확인한다.
+ */
+export function authenticate(request: Request, options: { staffOnly?: boolean } = {}): Auth {
+  const originError = checkOrigin(request);
+  if (originError) return { response: originError };
+  const session = readSession(request);
+  if (!session) {
+    return { response: fail("UNAUTHORIZED", "로그인이 필요합니다.", 401) };
+  }
+  if (options.staffOnly && !canEdit(session.role)) {
+    return { response: fail("ROLE_FORBIDDEN", "담당자만 할 수 있는 작업입니다.", 403) };
+  }
+  return { session };
+}
+
+/** 이 사용자가 그 물건을 볼 수 있는지: 담당자는 자기 구분값의 물건만, 팀장·부점장은 모두 */
+export function canAccessCase(session: SessionUser, ownerCode: string): boolean {
+  return session.role !== "staff" || session.ownerCode === ownerCode;
 }
 
 /** 요청 본문(JSON 객체)을 읽는다. 읽을 수 없거나 객체가 아니면 null */

@@ -42,3 +42,22 @@ create index if not exists cases_owner_code_idx on public.cases (owner_code);
 -- 브라우저용 공개 키로는 아무것도 읽거나 쓸 수 없다.
 alter table public.cases enable row level security;
 alter table public.case_checks enable row level security;
+
+-- 5.5 accounts: 로그인 계정. 비밀번호는 암호화(해시)해서만 저장한다. 샘플(가짜) 계정만 만든다.
+create table if not exists public.accounts (
+  id uuid primary key default gen_random_uuid(),
+  -- 로그인 아이디 (이름·사번이 아닌 임의의 코드)
+  login_id text not null unique
+    check (char_length(login_id) between 3 and 30),
+  -- 비밀번호 해시 (원래 비밀번호는 어디에도 저장하지 않는다)
+  password_hash text not null,
+  -- 역할: 담당자 / 팀장 / 부점장
+  role text not null check (role in ('staff', 'manager', 'director')),
+  -- 담당자 계정이 보는 물건의 담당자 구분값 (담당자는 필수, 팀장·부점장은 비움)
+  owner_code text
+    check (owner_code is null or char_length(owner_code) between 1 and 20),
+  created_at timestamptz not null default now(),
+  check (role <> 'staff' or owner_code is not null)
+);
+
+alter table public.accounts enable row level security;

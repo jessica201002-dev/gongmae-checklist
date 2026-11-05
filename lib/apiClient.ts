@@ -1,6 +1,6 @@
 // Design Ref: §6 — 브라우저 화면에서 서버 API를 부르는 도우미.
 // 서버가 돌려주는 { data } / { error: { message } } 형식을 풀어서, 성공하면 data를 주고 실패하면 쉬운 한국어 문구의 오류를 던진다.
-import { ROLE_HEADER, type Role } from "./role";
+import { markAnonymous } from "./useSession";
 
 /** 화면에 그대로 보여 줘도 되는 문구를 담은 오류 */
 export class ApiClientError extends Error {}
@@ -15,17 +15,15 @@ function readErrorMessage(json: unknown): string | null {
   return null;
 }
 
-/** 서버 API 호출. role을 주면 요청 머리글(x-role)로 현재 역할을 알린다 */
+/** 서버 API 호출. 로그인 쿠키는 브라우저가 알아서 보낸다. 서버가 401을 주면 로그인 화면으로 돌아가게 한다 */
 export async function callApi<T>(
   path: string,
   options: {
     method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
-    role?: Role;
     body?: unknown;
   } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (options.role) headers[ROLE_HEADER] = options.role;
 
   let response: Response;
   try {
@@ -48,6 +46,7 @@ export async function callApi<T>(
     // 본문이 비어 있거나 JSON이 아니면 아래에서 일반 문구를 쓴다
   }
 
+  if (response.status === 401) markAnonymous();
   if (!response.ok) {
     throw new ApiClientError(readErrorMessage(json) ?? FALLBACK_MESSAGE);
   }

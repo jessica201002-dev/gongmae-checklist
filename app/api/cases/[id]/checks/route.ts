@@ -1,17 +1,18 @@
-// Design Ref: §6 — PUT /api/cases/:id/checks (항목 하나 저장)
+// Design Ref: §6 — PUT /api/cases/:id/checks (항목 하나 저장). 로그인한 담당자가 자기 물건에만 할 수 있다.
 import type { NextRequest } from "next/server";
 import {
+  authenticate,
   badBody,
+  canAccessCase,
   fail,
   notFound,
   ok,
   readJsonObject,
-  requireStaff,
   toErrorResponse,
 } from "@/lib/api";
 import { buildCaseView } from "@/lib/caseView";
 import { todayInSeoul } from "@/lib/deadline";
-import { setCheck } from "@/lib/db/cases";
+import { getCase, setCheck } from "@/lib/db/cases";
 import { isUuid, validateCheckInput } from "@/lib/validation";
 
 /**
@@ -23,11 +24,13 @@ export async function PUT(
   request: NextRequest,
   ctx: RouteContext<"/api/cases/[id]/checks">,
 ) {
-  const forbidden = requireStaff(request);
-  if (forbidden) return forbidden;
+  const auth = authenticate(request, { staffOnly: true });
+  if (auth.response) return auth.response;
   try {
     const { id } = await ctx.params;
     if (!isUuid(id)) return notFound();
+    const found = await getCase(id);
+    if (!found || !canAccessCase(auth.session, found.record.ownerCode)) return notFound();
     const body = await readJsonObject(request);
     if (!body) return badBody();
 

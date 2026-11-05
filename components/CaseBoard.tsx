@@ -14,10 +14,13 @@ import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
 import { filterByOwner, listOwnerCodes, sortForReview } from "@/lib/reviewList";
 import { canEdit } from "@/lib/role";
-import { useRole } from "@/lib/useRole";
+import { useSession } from "@/lib/useSession";
 
 export default function CaseBoard() {
-  const role = useRole();
+  // 역할은 로그인한 계정에 정해져 있다. (로그인 확인은 바깥의 AuthGate가 하고, 확인되기 전에는 가장 낮은 권한으로 본다)
+  const session = useSession();
+  const user = session.status === "authed" ? session.user : null;
+  const role = user?.role ?? "manager";
   const editable = canEdit(role);
   // null이면 아직 불러오는 중
   const [cases, setCases] = useState<CaseView[] | null>(null);
@@ -96,7 +99,6 @@ export default function CaseBoard() {
     try {
       await callApi<{ id: string }>(`/api/cases/${item.id}`, {
         method: "DELETE",
-        role,
       });
       setCases((prev) => (prev ?? []).filter((c) => c.id !== item.id));
       setSelectedId((current) => (current === item.id ? null : current));
@@ -133,7 +135,14 @@ export default function CaseBoard() {
 
   return (
     <div className="flex flex-col gap-4">
-      {editable && <CaseForm role={role} onCreated={handleCreated} />}
+      {editable && user?.ownerCode && (
+        <CaseForm ownerCode={user.ownerCode} onCreated={handleCreated} />
+      )}
+      {editable && !user?.ownerCode && (
+        <p role="alert" className="text-sm font-medium text-danger-fg">
+          계정에 담당자 구분값이 없어 물건을 보거나 등록할 수 없습니다. 관리자에게 문의해 주세요.
+        </p>
+      )}
 
       <p
         ref={noticeRef}
@@ -165,9 +174,12 @@ export default function CaseBoard() {
       ) : (
         <div className="flex flex-col gap-4">
         {/* 팀장·부점장: 구분값별 진행 현황 요약 (담당자 화면에는 보이지 않는다) */}
-        {!editable && <SummaryCards cases={cases} />}
+        {/* 담당자: 내 구분값의 물건만 센 진행 현황 (서버가 내 물건만 돌려준다) / 팀장·부점장: 전체 현황 */}
+        {user && (
+          <SummaryCards cases={cases} title={editable ? "내 진행 현황" : "전체 진행 현황"} />
+        )}
         {!editable && <OwnerSummary cases={cases} />}
-        {cases.length > 0 && (
+        {!editable && cases.length > 0 && (
           <OwnerFilter
             owners={ownerCodes}
             value={activeOwner}

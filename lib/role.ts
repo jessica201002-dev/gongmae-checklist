@@ -1,6 +1,5 @@
-// Design Ref: §3.3, §6, §7.3 — 역할 값과 권한 규칙. 로그인 없이 화면에서 역할을 고른다.
-// ※ 역할 선택은 실제 접근 통제가 아니다. (PRD 7번: 샘플 데이터만 사용)
-// ※ 이 파일은 서버 코드와 브라우저 코드 모두에서 쓴다. 브라우저에 기억하는 부분은 useRole.ts에 있다.
+// Design Ref: §3.3, §6, §7.3 — 역할 값과 권한 규칙. 역할은 로그인한 계정에 정해져 있다(lib/session.ts).
+// ※ 이 파일은 서버 코드와 브라우저 코드 모두에서 쓴다.
 
 /** 역할 3가지. canEdit이 true인 역할만 입력·체크·삭제를 할 수 있다 */
 export const ROLES = [
@@ -25,12 +24,6 @@ export const ROLES = [
 ] as const;
 
 export type Role = (typeof ROLES)[number]["key"];
-
-/** 처음 접속했을 때의 역할 */
-export const DEFAULT_ROLE: Role = "staff";
-
-/** 서버 API에 현재 역할을 알리는 요청 머리글 이름 (DESIGN §6) */
-export const ROLE_HEADER = "x-role";
 
 export function isRole(value: unknown): value is Role {
   return ROLES.some((role) => role.key === value);

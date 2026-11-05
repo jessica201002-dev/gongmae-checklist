@@ -4,7 +4,6 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
-import type { Role } from "@/lib/role";
 import { CASE_NO_MAX, OWNER_CODE_MAX } from "@/lib/validation";
 
 const inputClass =
@@ -12,14 +11,14 @@ const inputClass =
   "placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground";
 
 export default function CaseForm({
-  role,
+  ownerCode,
   onCreated,
 }: {
-  role: Role;
+  /** 로그인한 계정의 담당자 구분값. 물건은 항상 이 구분값으로 등록된다(서버도 같은 값으로 정한다) */
+  ownerCode: string;
   onCreated: (created: CaseView) => void;
 }) {
   const [caseNo, setCaseNo] = useState("");
-  const [ownerCode, setOwnerCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const caseNoId = useId();
@@ -38,23 +37,17 @@ export default function CaseForm({
       setError("물건번호를 입력해 주세요.");
       return;
     }
-    if (ownerCode.trim() === "") {
-      setError("담당자 구분값을 입력해 주세요.");
-      return;
-    }
     setSubmitting(true);
     setError(null);
     try {
       const created = await callApi<CaseView>("/api/cases", {
         method: "POST",
-        role,
-        body: { caseNo, ownerCode },
+        body: { caseNo },
       });
       onCreated(created);
       lastSuccessAt.current = Date.now();
       setCaseNo("");
       caseNoRef.current?.focus();
-      // 같은 담당자가 이어서 등록하는 경우가 많아 구분값은 그대로 둔다
     } catch (err) {
       // 실패해도 입력한 값은 지우지 않는다
       setError(
@@ -97,12 +90,14 @@ export default function CaseForm({
           <input
             id={ownerCodeId}
             value={ownerCode}
-            onChange={(event) => setOwnerCode(event.target.value)}
+            readOnly
             maxLength={OWNER_CODE_MAX}
-            autoComplete="off"
-            placeholder="예: 담당-01 (이름이 아닌 코드)"
-            className={inputClass}
+            aria-describedby={`${ownerCodeId}-hint`}
+            className={inputClass + " read-only:bg-surface"}
           />
+          <span id={`${ownerCodeId}-hint`} className="text-xs text-muted">
+            로그인한 계정의 구분값으로 등록됩니다.
+          </span>
         </div>
         <button
           type="submit"
