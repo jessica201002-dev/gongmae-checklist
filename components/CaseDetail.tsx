@@ -59,6 +59,8 @@ export default function CaseDetail({
   const [savingBid, setSavingBid] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
   const [bidNotice, setBidNotice] = useState<string | null>(null);
+  // 날짜 칸에 일부만 입력한 상태. 이때 브라우저는 값을 빈 문자열로 알려 주므로, 그대로 저장하면 낙찰일이 지워진다
+  const [bidBadInput, setBidBadInput] = useState(false);
   const bidInputId = useId();
   // 송달 등기번호: 입력 중인 값과 저장 상태 (Design Ref: §7.4 — 송달 여부 확인 항목의 등기번호 입력란)
   const [regNoDraft, setRegNoDraft] = useState(item?.deliveryRegNo ?? "");
@@ -99,7 +101,9 @@ export default function CaseDetail({
   const busy = pending !== null || savingBid || savingRegNo;
   const bidDirty = draft !== (item.bidDate ?? "");
   const regNoDirty = regNoDraft.trim() !== (item.deliveryRegNo ?? "");
-  const draftIssue = bidDateProblem(draft);
+  const draftIssue = bidBadInput
+    ? "날짜를 끝까지 입력해 주세요. 낙찰일을 지우려면 \"낙찰일 지우기\"를 누르세요."
+    : bidDateProblem(draft);
   const bidSaveBlocked = busy || !bidDirty || draftIssue !== null;
   const regNoSaveBlocked = busy || !regNoDirty;
 
@@ -140,6 +144,7 @@ export default function CaseDetail({
       });
       onUpdated(updated);
       setDraft(updated.bidDate ?? "");
+      setBidBadInput(false);
       setBidNotice(next ? "낙찰일을 저장했습니다." : "낙찰일을 지웠습니다.");
       // "낙찰일 지우기" 버튼이 사라지므로, 이어서 입력할 수 있게 입력칸으로 초점을 옮긴다
       if (next === null) bidInputRef.current?.focus();
@@ -211,6 +216,7 @@ export default function CaseDetail({
                 onChange={(event) => {
                   if (busy) return;
                   setDraft(event.target.value);
+                  setBidBadInput(event.target.validity.badInput);
                   setBidNotice(null);
                   setBidError(null);
                 }}
@@ -260,6 +266,7 @@ export default function CaseDetail({
               bidDateAllowed={(ymd) => bidDateProblem(ymd) === null}
               onFill={(ymd) => {
                 setDraft(ymd);
+                setBidBadInput(false);
                 setBidNotice(null);
                 setBidError(null);
               }}
@@ -425,7 +432,7 @@ export default function CaseDetail({
                       )}
                     </div>
                     <p className="text-xs text-muted">
-                      등기번호만 입력하세요. 이름·연락처 등 다른 개인정보는 함께 적지 마세요.
+                      등기번호는 숫자와 하이픈(-)만 입력할 수 있습니다. 이름·연락처 등 다른 개인정보는 적지 마세요.
                     </p>
                     {regNoError && (
                       <p role="alert" className="text-sm font-medium text-danger-fg">

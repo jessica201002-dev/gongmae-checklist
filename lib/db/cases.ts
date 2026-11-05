@@ -59,27 +59,20 @@ function storageError(error: { message: string; code?: string }): never {
 /** 물건 목록 (등록 순). ownerCode를 주면 그 구분값의 물건만 */
 export async function listCases(ownerCode?: string): Promise<CaseWithChecks[]> {
   const db = getSupabase();
+  // 체크 내용은 물건과 한 번에 가져온다. (물건 id를 주소에 길게 이어 붙이면 물건이 많을 때 요청이 실패한다)
   let query = db
     .from("cases")
-    .select("*")
+    .select("*, case_checks(case_id, item_key, status)")
     .order("created_at", { ascending: true })
     .order("id", { ascending: true });
   if (ownerCode) query = query.eq("owner_code", ownerCode);
   const { data, error } = await query;
   if (error) storageError(error);
-  const rows = (data ?? []) as CaseRow[];
-  if (rows.length === 0) return [];
-
-  const { data: checkData, error: checkError } = await db
-    .from("case_checks")
-    .select("case_id, item_key, status")
-    .in("case_id", rows.map((row) => row.id));
-  if (checkError) storageError(checkError);
-  const checkRows = (checkData ?? []) as CheckRow[];
+  const rows = (data ?? []) as (CaseRow & { case_checks: CheckRow[] | null })[];
 
   return rows.map((row) => ({
     record: toRecord(row),
-    checks: toChecks(checkRows.filter((check) => check.case_id === row.id)),
+    checks: toChecks(row.case_checks ?? []),
   }));
 }
 

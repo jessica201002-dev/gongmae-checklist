@@ -3,6 +3,8 @@ import RoleSwitcher from "@/components/RoleSwitcher";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // 내부용이므로 검색 엔진에 나타나지 않게 한다
+  robots: { index: false, follow: false },
   title: "압류재산 공매업무 체크리스트",
   description:
     "압류재산 공매의 매각결정 단계 확인 사항과 매각결정기일을 한눈에 관리하는 내부용 체크리스트",

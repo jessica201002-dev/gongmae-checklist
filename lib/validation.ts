@@ -79,7 +79,13 @@ export function validateDeliveryRegNo(
   if (typeof value === "string" && value.trim() === "") {
     return { ok: true, value: null };
   }
-  return validateText(value, "등기번호", DELIVERY_REG_NO_MAX);
+  const text = validateText(value, "등기번호", DELIVERY_REG_NO_MAX);
+  if (!text.ok) return text;
+  // 이름·연락처 같은 글자가 섞여 들어가지 않도록 숫자와 하이픈만 받는다 (PRD 7번)
+  if (!/^[0-9-]+$/.test(text.value)) {
+    return { ok: false, message: "등기번호는 숫자와 하이픈(-)만 입력할 수 있습니다." };
+  }
+  return text;
 }
 
 /** 항목 체크 요청: itemKey는 6개 중 하나, status는 "done" | "na" | null(미완료) */

@@ -97,8 +97,25 @@ export function parseOnbidResponse(json: unknown): OnbidLookupResult {
   return { status: "found", bidDate, info };
 }
 
+// 같은 물건번호를 반복 조회해도 온비드 호출 한도를 쓰지 않도록, 결과를 잠시 재사용한다.
+// 조회 불가(오류) 결과는 재사용하지 않는다. 서버 한 개 안에서만 유지되므로 완전한 호출 제한은 아니다.
+const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_MAX = 200;
+const cache = new Map<string, { at: number; result: OnbidLookupResult }>();
+
 /** 물건번호(= 온비드 물건관리번호)로 온비드 공개 정보를 조회한다. 읽기 전용(GET) */
 export async function lookupOnbid(caseNo: string): Promise<OnbidLookupResult> {
+  const hit = cache.get(caseNo);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.result;
+  const result = await fetchOnbid(caseNo);
+  if (result.status !== "unavailable") {
+    if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value as string);
+    cache.set(caseNo, { at: Date.now(), result });
+  }
+  return result;
+}
+
+async function fetchOnbid(caseNo: string): Promise<OnbidLookupResult> {
   const key = process.env.ONBID_SERVICE_KEY;
   if (!key || key.trim() === "") return { status: "unavailable", reason: "no_key" };
 
