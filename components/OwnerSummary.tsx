@@ -17,7 +17,7 @@ export default function OwnerSummary({ cases }: { cases: CaseView[] }) {
       <h3 id="owner-summary-title" className="text-base font-semibold">
         담당자 구분값별 진행 현황
       </h3>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="surface-card overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <caption className="sr-only">
             담당자 구분값별 물건 수, 검토 필요, 임박, 기일 경과 건수

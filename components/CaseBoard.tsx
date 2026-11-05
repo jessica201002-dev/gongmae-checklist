@@ -8,6 +8,8 @@ import CaseForm from "@/components/CaseForm";
 import CaseList from "@/components/CaseList";
 import OwnerFilter from "@/components/OwnerFilter";
 import OwnerSummary from "@/components/OwnerSummary";
+import ScanLoader from "@/components/ScanLoader";
+import SummaryCards from "@/components/SummaryCards";
 import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
 import { filterByOwner, listOwnerCodes, sortForReview } from "@/lib/reviewList";
@@ -159,10 +161,11 @@ export default function CaseBoard() {
           </button>
         </div>
       ) : cases === null ? (
-        <p className="text-sm text-muted">물건 목록을 불러오는 중입니다...</p>
+        <ScanLoader message="물건 목록을 불러오는 중입니다..." />
       ) : (
         <div className="flex flex-col gap-4">
         {/* 팀장·부점장: 구분값별 진행 현황 요약 (담당자 화면에는 보이지 않는다) */}
+        {!editable && <SummaryCards cases={cases} />}
         {!editable && <OwnerSummary cases={cases} />}
         {cases.length > 0 && (
           <OwnerFilter
@@ -171,7 +174,7 @@ export default function CaseBoard() {
             onChange={handleOwnerFilter}
           />
         )}
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
           <CaseList
             cases={visibleCases}
             selectedId={selectedId}

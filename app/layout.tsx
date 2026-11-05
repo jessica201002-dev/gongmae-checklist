@@ -13,9 +13,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
-        <header className="border-b border-border">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-lg font-semibold tracking-tight">
+        <header className="border-b border-line bg-card/85 backdrop-blur">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <h1 className="flex items-center gap-3 text-lg font-semibold tracking-tight">
+              <span
+                aria-hidden="true"
+                className="inline-block h-7 w-7 rounded-lg bg-linear-to-br from-[#bd4468] via-[#9d4f72] to-[#ff5a1f] shadow-[0_4px_12px_rgba(173,53,91,0.35)]"
+              />
               압류재산 공매업무 체크리스트
             </h1>
             <RoleSwitcher />
@@ -27,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             ※ 샘플 데이터 전용입니다. 실제 업무 정보를 입력하지 마세요.
           </p>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-8">
           {children}
         </main>
       </body>

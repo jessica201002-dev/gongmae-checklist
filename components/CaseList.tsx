@@ -39,8 +39,8 @@ export default function CaseList({
           <li
             key={item.id}
             className={
-              "flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between " +
-              (selected ? "border-foreground bg-surface" : "border-border")
+              "surface-card lift flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between " +
+              (selected ? "border-foreground! ring-1 ring-foreground" : "")
             }
           >
             <button

@@ -1,10 +1,15 @@
 @import "tailwindcss";
 
+/* 디자인 토큰: 밝은 페이퍼 그레이 바탕 + 로즈·퍼플·코랄·오렌지 포인트.
+   기존 이름(background, foreground, muted, border, surface …)은 그대로 두고, 카드용 색을 더했다. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --muted: #5f6368;
-  --border: #d0d3d9;
+  --paper: #ececeb;
+  --background: #f5f6f8;
+  --foreground: #222222;
+  --card: #ffffff;
+  --muted: #5a5f66;
+  --border: #c9ccd3; /* 입력칸·버튼 테두리(눈에 잘 띄게) */
+  --line: #e2e3e6; /* 카드·표의 옅은 구분선 */
   --surface: #f2f3f5;
   --notice-bg: #fff4d6;
   --notice-fg: #6b4a00;
@@ -15,13 +20,24 @@
   --ok-fg: #1d6b34;
   --info-bg: #dce8ff;
   --info-fg: #17387f;
+
+  --rose: #ad355b;
+  --rose-deep: #8c1320;
+  --orange: #ff5a1f;
+  --violet: #ad80ca;
+
+  --shadow-soft: 0 8px 30px rgba(25, 30, 45, 0.06);
+  --shadow-card: 0 16px 40px rgba(70, 30, 55, 0.14);
+  --shadow-hover: 0 24px 60px rgba(70, 30, 55, 0.2);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-line: var(--line);
   --color-surface: var(--surface);
   --color-notice-bg: var(--notice-bg);
   --color-notice-fg: var(--notice-fg);
@@ -32,19 +48,23 @@
   --color-ok-fg: var(--ok-fg);
   --color-info-bg: var(--info-bg);
   --color-info-fg: var(--info-fg);
+  --color-rose: var(--rose);
   /* 한글이 잘 보이도록 시스템 한글 글꼴을 먼저 쓴다 */
-  --font-sans: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic",
+  --font-sans: "Pretendard", "Inter", "Apple SD Gothic Neo", "Malgun Gothic",
     "Noto Sans KR", system-ui, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --paper: #0d0f13;
+    --background: #0b0c10;
     --foreground: #ededed;
+    --card: #14171c;
     --muted: #a3a7ae;
-    --border: #33363c;
-    --surface: #17191d;
+    --border: #3a3e46;
+    --line: #2a2d34;
+    --surface: #1b1e24;
     --notice-bg: #3a2e0f;
     --notice-fg: #ffe6a3;
     --warn-bg: #4a3a0c;
@@ -54,11 +74,227 @@
     --ok-fg: #7fd69a;
     --info-bg: #1a2d52;
     --info-fg: #b4cfff;
+    --rose: #e0708f;
+    --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.35);
+    --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.45);
+    --shadow-hover: 0 24px 60px rgba(0, 0, 0, 0.55);
   }
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  background-color: var(--background);
+  /* 페이퍼 그레이 위에 아주 옅은 로즈·퍼플 빛. 글자 대비에 영향이 없는 정도로만 둔다 */
+  background-image:
+    radial-gradient(ellipse 60% 40% at 8% -6%, rgba(173, 53, 91, 0.07), transparent 70%),
+    radial-gradient(ellipse 50% 36% at 96% 0%, rgba(173, 128, 202, 0.1), transparent 70%);
+  background-repeat: no-repeat;
+}
+
+/* ───── 흰색 업무용 카드 (목록·상세·표·폼) ───── */
+.surface-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+.lift {
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.28s ease;
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+/* ───── 프리미엄 지표 카드: 그라데이션 + 유리 광택 + 미세한 질감 ───── */
+.premium-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 17px;
+  box-shadow:
+    0 2px 4px rgba(50, 28, 39, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    var(--shadow-card);
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.28s ease;
+}
+.premium-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 2px 4px rgba(50, 28, 39, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    var(--shadow-hover);
+}
+/* 글자가 잘 읽히도록 밝은 부분의 하이라이트는 약하게 둔다 */
+.premium-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(102deg, rgba(255, 255, 255, 0.07), transparent 28%, rgba(255, 255, 255, 0.05) 62%, transparent 88%),
+    radial-gradient(ellipse 85% 34% at 54% 7%, rgba(255, 255, 255, 0.13), transparent 72%);
+  mix-blend-mode: screen;
+}
+/* SVG feTurbulence 질감 */
+.premium-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.54' numOctaves='3' seed='27'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.premium-card > * {
+  position: relative;
+  z-index: 2;
+}
+.premium-card > .card-art {
+  position: absolute;
+  z-index: 0;
+}
+
+/* 글자(흰색)와의 대비 4.5:1 이상을 지키도록 밝은 쪽을 낮춘 색 */
+.card-rose {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(255, 235, 232, 0.14), transparent 75%),
+    linear-gradient(180deg, #9f2b52 0%, #98284d 38%, #96303f 72%, #7c101c 100%);
+}
+.card-purple {
+  background:
+    radial-gradient(ellipse 75% 45% at 30% 0%, rgba(225, 215, 255, 0.12), transparent 75%),
+    linear-gradient(164deg, #6e4494 0%, #663c88 29%, #623660 64%, #4d2639 100%);
+}
+.card-coral {
+  background:
+    radial-gradient(ellipse 80% 40% at 60% 50%, rgba(255, 170, 90, 0.16), transparent 75%),
+    linear-gradient(177deg, #ad2c1a 0%, #b4341f 24%, #bf4627 52%, #b93a28 78%, #ab3025 100%);
+}
+.card-slate {
+  background: linear-gradient(155deg, #40597a 0%, #344c69 48%, #263a55 100%);
+}
+
+/* ───── 큰 제목 ───── */
+.headline-accent {
+  background: linear-gradient(95deg, var(--rose) 0%, #c2410c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (prefers-color-scheme: dark) {
+  .headline-accent {
+    background: linear-gradient(95deg, #f0869f 0%, #ff8a4d 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+/* ───── 등장 모션 (transform·opacity만 사용) ───── */
+@keyframes headline-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes card-in {
+  from {
+    opacity: 0.5;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.reveal {
+  animation: headline-reveal 0.84s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.reveal-card {
+  animation: card-in 0.76s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 100ms);
+}
+
+/* ───── 카드 배경 그래픽의 느린 움직임 ───── */
+@keyframes art-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+.art-pulse {
+  transform-origin: center;
+  animation: art-pulse 5s ease-in-out infinite;
+}
+
+/* ───── 스캐너: 목록을 불러오는 실제 대기 상태에서만 쓴다 ───── */
+@keyframes scan-sweep {
+  0% {
+    left: 0;
+  }
+  100% {
+    left: calc(100% - 4px);
+  }
+}
+.scan-track {
+  position: relative;
+  overflow: hidden;
+  height: 56px;
+  border-radius: 14px;
+  background:
+    repeating-linear-gradient(90deg, rgba(173, 53, 91, 0.08) 0 1px, transparent 1px 14px),
+    var(--surface);
+}
+.scan-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #ff7a3c, #ff5a1f 12%, #ff5a1f 88%, #ff7a3c);
+  box-shadow:
+    0 0 10px 2px rgba(255, 90, 31, 0.85),
+    0 0 34px 10px rgba(255, 90, 31, 0.38);
+  animation: scan-sweep 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+
+/* 모션 줄이기 설정: 움직임·등장 효과를 모두 끄고 바로 최종 모습을 보여 준다 */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-card,
+  .art-pulse,
+  .scan-line {
+    animation: none;
+  }
+  .scan-line {
+    left: 50%;
+  }
+  .premium-card,
+  .lift {
+    transition: none;
+  }
+  .premium-card:hover,
+  .lift:hover {
+    transform: none;
+  }
 }

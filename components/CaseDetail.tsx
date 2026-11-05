@@ -78,7 +78,7 @@ export default function CaseDetail({
     return (
       <section
         aria-labelledby="case-detail-title"
-        className="rounded-lg border border-dashed border-border p-4"
+        className="surface-card border-dashed p-5"
       >
         <h3
           id="case-detail-title"
@@ -181,7 +181,7 @@ export default function CaseDetail({
   return (
     <section
       aria-labelledby="case-detail-title"
-      className="flex flex-col gap-4 rounded-lg border border-border p-4"
+      className="surface-card flex flex-col gap-4 p-5"
     >
       <div className="flex flex-col gap-1">
         <h3
@@ -320,7 +320,7 @@ export default function CaseDetail({
         </p>
         <div aria-hidden="true" className="h-2 w-full overflow-hidden rounded-full bg-surface">
           <div
-            className="h-full bg-ok-fg transition-[width]"
+            className="h-full bg-linear-to-r from-[#ad355b] to-[#ff5a1f] transition-[width]"
             style={{ width: `${(item.completedCount / item.totalCount) * 100}%` }}
           />
         </div>

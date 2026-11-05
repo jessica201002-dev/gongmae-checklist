@@ -72,7 +72,7 @@ export default function CaseForm({
       onSubmit={handleSubmit}
       noValidate
       aria-label="물건 등록"
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4"
+      className="surface-card flex flex-col gap-3 p-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1">
