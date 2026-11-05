@@ -381,6 +381,7 @@ export default function CaseDetail({
               {/* Plan SC: FR-15~17 — 온비드 공개 정보 조회로 낙찰일을 채운다(저장은 담당자가 확인한 뒤) */}
               <OnbidLookup
                 caseId={caseId}
+                autoFill={!item.bidDate && draft.trim() === ""}
                 onAmounts={(amounts) =>
                   setOnbidAmounts(
                     amounts && (amounts.appraisal || amounts.winningBid)

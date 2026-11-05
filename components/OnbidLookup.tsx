@@ -3,7 +3,7 @@
 // Design Ref: §7.1, §7.4 — 온비드 조회 버튼(담당자 전용). 물건번호로 온비드 공개 정보를 조회해
 // 낙찰일을 입력칸에 채워 주고 공개 물건 기본 정보를 보여 준다. 채우기만 하고 저장은 담당자가 확인한 뒤 따로 누른다.
 // 조회에 실패하거나 결과가 없어도 낙찰일 직접 입력은 그대로 쓸 수 있다.
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiClientError, callApi } from "@/lib/apiClient";
 import {
   ONBID_NOT_FOUND_MESSAGE,
@@ -24,8 +24,11 @@ export default function OnbidLookup({
   bidDateAllowed,
   onFill,
   onAmounts,
+  autoFill,
 }: {
   caseId: string;
+  /** 물건을 열었을 때 자동 조회로 낙찰일을 채워도 되는지 (저장된 낙찰일이 없고 입력칸도 비어 있을 때 true) */
+  autoFill: boolean;
   /** 조회로 읽어 온 온비드 감정가액·낙찰가액을 알린다 (없으면 null). 저장하지 않고 화면에만 보여 준다 */
   onAmounts?: (
     amounts: {
@@ -47,8 +50,19 @@ export default function OnbidLookup({
   // 조회 중에 다른 물건으로 바뀌어도 이전 결과를 반영하지 않도록 최신 요청만 받는다
   const requestId = useRef(0);
 
-  async function handleLookup() {
-    if (loading || blocked) return;
+  // 물건을 열면 자동으로 한 번 조회한다. 낙찰일 입력칸이 비어 있을 때만 값을 채우고, 이미 입력된 낙찰일은 덮어쓰지 않는다.
+  const autoFillRef = useRef(autoFill);
+  useEffect(() => {
+    autoFillRef.current = autoFill;
+  }, [autoFill]);
+  useEffect(() => {
+    void handleLookup(true);
+    // 물건이 바뀌면 CaseDetail이 새로 만들어지므로 처음 한 번만 실행한다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleLookup(auto = false) {
+    if (loading || (blocked && !auto)) return;
     const mine = ++requestId.current;
     setLoading(true);
     setOutcome(null);
@@ -57,7 +71,9 @@ export default function OnbidLookup({
         method: "POST",
       });
       if (mine !== requestId.current) return;
-      setOutcome(describe(result, bidDateAllowed, onFill));
+      // 자동 조회는 입력칸이 비어 있을 때만 채운다. 버튼을 눌렀을 때는 항상 채운다(담당자가 확인한 뒤 저장)
+      const fill = auto ? autoFillRef.current : true;
+      setOutcome(describe(result, bidDateAllowed, onFill, fill));
       onAmounts?.(
         result.status === "found"
           ? {
@@ -86,7 +102,7 @@ export default function OnbidLookup({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <button
           type="button"
-          onClick={handleLookup}
+          onClick={() => handleLookup()}
           aria-disabled={loading || blocked}
           className="btn btn-secondary"
         >
@@ -141,6 +157,7 @@ function describe(
   result: OnbidLookupResult,
   bidDateAllowed: (ymd: string) => boolean,
   onFill: (ymd: string) => void,
+  fill: boolean,
 ): Outcome {
   if (result.status === "unavailable") {
     return { kind: "problem", message: ONBID_UNAVAILABLE_MESSAGES[result.reason] };
@@ -160,6 +177,14 @@ function describe(
     return {
       kind: "info",
       message: `온비드의 낙찰일(${result.bidDate})은 입력 가능한 범위(2000~2099년) 밖이라 채우지 않았습니다. 낙찰일은 직접 입력해 주세요.`,
+      info: result.info,
+      sample: result.sample === true,
+    };
+  }
+  if (!fill) {
+    return {
+      kind: "info",
+      message: `온비드의 낙찰일은 ${result.bidDate}입니다. 이미 입력된 낙찰일은 바꾸지 않았습니다. 다르면 "온비드에서 낙찰일 조회"를 눌러 채운 뒤 저장해 주세요.`,
       info: result.info,
       sample: result.sample === true,
     };
