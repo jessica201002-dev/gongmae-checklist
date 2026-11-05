@@ -1,8 +1,9 @@
 // Design Ref: §5.5, §10.3 — 샘플(가짜) 로그인 계정 만들기. 시연과 점검에 쓴다.
 //
 // 사용법 (프로젝트 폴더에서):
-//   npm run seed:accounts                  샘플 계정을 (다시) 만든다. 비밀번호는 모두 간단한 값(1234)이다.
-//   node scripts/seed-accounts.mjs --random  비밀번호를 계정마다 무작위 14자로 만든다(공개 전에 사용).
+//   npm run seed:accounts                    샘플 계정을 (다시) 만든다. 비밀번호는 계정마다 무작위 14자이다(기본값).
+//   npm run seed:accounts -- --simple         비밀번호를 모두 1234로 만든다. 이 앱이 쓰는 DB는 배포 환경과 같으므로
+//                                             혼자 쓰는 로컬 시연에서만 잠깐 쓰고, 공개(배포) 전에는 기본값으로 되돌린다.
 //   node scripts/seed-accounts.mjs --dry-run   표는 건드리지 않고 만들 계정 아이디만 보여 준다.
 //
 // 안전 규칙
@@ -33,18 +34,18 @@ const SAMPLE_ACCOUNTS = [
   { loginId: "director01", role: "director", ownerCode: null },
 ];
 
-// 시연을 편하게 하려고 샘플 계정의 비밀번호는 모두 같은 간단한 값으로 한다.
-// ※ 이 값은 아주 약하다. 샘플 계정을 실제 공개 주소에서 쓰기 전에는 반드시 --random으로 바꿔야 한다.
+// 기본값은 무작위 비밀번호다. 아이디가 코드에 공개되어 있어, 약한 비밀번호가 DB에 들어 있으면
+// 배포 환경에서 누구나 로그인할 수 있기 때문이다. --simple을 직접 붙여야만 1234가 된다.
 const SIMPLE_PASSWORD = "1234";
-const USE_RANDOM = process.argv.slice(2).includes("--random");
+const USE_SIMPLE = process.argv.slice(2).includes("--simple");
 
-// --random: 헷갈리는 글자(0 O 1 l I)를 뺀 글자로 14자 무작위 비밀번호를 만든다
+// 헷갈리는 글자(0 O 1 l I)를 뺀 글자로 14자 무작위 비밀번호를 만든다
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
 function randomPassword() {
   return Array.from({ length: 14 }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
 }
 function samplePassword() {
-  return USE_RANDOM ? randomPassword() : SIMPLE_PASSWORD;
+  return USE_SIMPLE ? SIMPLE_PASSWORD : randomPassword();
 }
 
 // lib/password.ts를 임시 폴더(node_modules/.cache, Git에 올라가지 않음)에서 JavaScript로 바꿔 불러온다
@@ -69,6 +70,9 @@ function loadEnv() {
 }
 
 async function main() {
+  if (USE_SIMPLE) {
+    console.log("⚠ --simple: 비밀번호를 1234로 만듭니다. 배포 환경과 같은 DB이므로 공개(배포) 전에는 옵션 없이 다시 실행하세요.\n");
+  }
   console.log(`샘플 계정 ${SAMPLE_ACCOUNTS.length}개 (${DRY_RUN ? "미리 보기" : "저장"}):`);
   for (const a of SAMPLE_ACCOUNTS) {
     console.log(`  - ${a.loginId}  역할=${a.role}  구분값=${a.ownerCode ?? "(없음)"}`);
