@@ -117,6 +117,11 @@ export function parseOnbidResponse(json: unknown, caseNo?: string): OnbidLookupR
   const first = pickItem(items);
   const status = text(first.pbctStatNm);
   const bidDate = status === "낙찰" ? toYmd(first.cltrOpbdDt) : null;
+  // 낙찰금액(scfbAmt)과 감정가 대비 낙찰가율(apslPrcCtrsScfbPrcRto)은 "낙찰"인 건에서만 쓴다
+  const winningBid = status === "낙찰" ? (won(first.scfbAmt) ?? undefined) : undefined;
+  const ratioNum = Number(first.apslPrcCtrsScfbPrcRto);
+  const winningRatio =
+    winningBid && Number.isFinite(ratioNum) && ratioNum > 0 ? `${ratioNum}%` : undefined;
 
   const rows: [string, string | null][] = [
     ["물건명", text(first.onbidCltrNm)],
@@ -125,10 +130,19 @@ export function parseOnbidResponse(json: unknown, caseNo?: string): OnbidLookupR
     ["감정가", won(first.apslEvlAmt)],
     ["개찰일시", toYmdHm(first.cltrOpbdDt)],
     ["입찰 결과", status ? `${status}${text(first.pbctNsq) ? ` (${Number(first.pbctNsq)}회차)` : ""}` : null],
+    ["낙찰가액", winningBid ?? null],
+    ["감정가 대비", winningRatio ?? null],
   ];
   const info = rows.flatMap(([label, value]) => (value ? [{ label, value }] : []));
   const appraisal = won(first.apslEvlAmt) ?? undefined;
-  return { status: "found", bidDate, ...(appraisal ? { appraisal } : {}), info };
+  return {
+    status: "found",
+    bidDate,
+    ...(appraisal ? { appraisal } : {}),
+    ...(winningBid ? { winningBid } : {}),
+    ...(winningRatio ? { winningRatio } : {}),
+    info,
+  };
 }
 
 // 같은 물건번호를 반복 조회해도 온비드 호출 한도를 쓰지 않도록, 결과를 잠시 재사용한다.

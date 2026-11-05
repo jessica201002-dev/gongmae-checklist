@@ -19,6 +19,10 @@ export type OnbidLookupResult =
       bidDate: string | null;
       /** 온비드의 감정가액 표시 문구(예: "501,000,000원"). 온비드에 없으면 생략 */
       appraisal?: string;
+      /** 낙찰금액 표시 문구(예: "415,830,000원"). 입찰 결과가 "낙찰"일 때만 있다 */
+      winningBid?: string;
+      /** 감정가 대비 낙찰가율 표시 문구(예: "83%") */
+      winningRatio?: string;
       /** 화면에 보여 줄 공개 물건 기본 정보 (이름표 → 값) */
       info: { label: string; value: string }[];
     }
