@@ -11,7 +11,7 @@ import { CHECKLIST_ITEMS, type ItemKey } from "@/lib/checklist";
 import { formatYmdWithWeekday } from "@/lib/dateFormat";
 import { canEdit, type Role } from "@/lib/role";
 import type { ItemState } from "@/lib/types";
-import { DELIVERY_REG_NO_MAX } from "@/lib/validation";
+import { BID_DATE_MAX, BID_DATE_MIN, DELIVERY_REG_NO_MAX } from "@/lib/validation";
 
 const OPTIONS: { value: ItemState; label: string }[] = [
   { value: null, label: "미완료" },
@@ -28,8 +28,6 @@ function stateLabel(state: ItemState | undefined): string {
 const GENERIC_ERROR = "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 
 // 날짜 칸은 연도를 6자리까지 받는 브라우저가 있어, 저장 전에 모양과 범위를 먼저 알려 준다.
-const BID_DATE_MIN = "2000-01-01";
-const BID_DATE_MAX = "2099-12-31";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /** 입력 중인 낙찰일에 문제가 있으면 안내 문구를, 없으면(비운 경우 포함) null */

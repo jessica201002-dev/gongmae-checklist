@@ -11,6 +11,11 @@ export const CASE_NO_MAX = 50;
 export const OWNER_CODE_MAX = 20;
 export const DELIVERY_REG_NO_MAX = 30;
 
+// 낙찰일로 받을 수 있는 범위. 화면의 날짜 칸과 서버가 같은 값을 쓴다.
+// (서버에서도 막지 않으면 API로 보낸 엉뚱한 연도가 기일 계산을 깨뜨려 목록 전체가 오류가 난다)
+export const BID_DATE_MIN = "2000-01-01";
+export const BID_DATE_MAX = "2099-12-31";
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // 줄바꿈·탭 같은 제어 문자
@@ -51,6 +56,13 @@ export function validateOwnerCode(value: unknown): Validated<string> {
 export function validateBidDate(value: unknown): Validated<string | null> {
   if (value === null || value === "") return { ok: true, value: null };
   if (typeof value === "string" && isValidYmd(value)) {
+    // "YYYY-MM-DD" 문자열은 사전순 비교가 날짜순과 같다
+    if (value < BID_DATE_MIN || value > BID_DATE_MAX) {
+      return {
+        ok: false,
+        message: "낙찰일은 2000년부터 2099년 사이로 입력해 주세요.",
+      };
+    }
     return { ok: true, value };
   }
   return {
