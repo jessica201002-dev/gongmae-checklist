@@ -2,6 +2,7 @@
 
 // Design Ref: §7.1, §7.3, §7.4 — 물건 상세: 낙찰일·매각결정기일·기한 상태 + 매각결정 체크리스트 6개 항목.
 // 담당자는 낙찰일을 입력하고 항목마다 미완료 / 완료 / 해당 없음을 고르며, 팀장·부점장은 읽기만 한다.
+// 디자인: 구역마다 흰 카드로 나누고(큰 회색 상자 안에 또 회색 상자를 두지 않는다), 공통 부품(.btn .field .seg .progress)을 쓴다.
 import { useId, useRef, useState, type Ref } from "react";
 import OnbidLookup from "@/components/OnbidLookup";
 import StatusBadge from "@/components/StatusBadge";
@@ -13,10 +14,10 @@ import { canEdit, type Role } from "@/lib/role";
 import type { ItemState } from "@/lib/types";
 import { BID_DATE_MAX, BID_DATE_MIN, DELIVERY_REG_NO_MAX } from "@/lib/validation";
 
-const OPTIONS: { value: ItemState; label: string }[] = [
-  { value: null, label: "미완료" },
-  { value: "done", label: "완료" },
-  { value: "na", label: "해당 없음" },
+const OPTIONS: { value: ItemState; label: string; variant: "none" | "done" | "na" }[] = [
+  { value: null, label: "미완료", variant: "none" },
+  { value: "done", label: "완료", variant: "done" },
+  { value: "na", label: "해당 없음", variant: "na" },
 ];
 
 function stateLabel(state: ItemState | undefined): string {
@@ -39,6 +40,8 @@ function bidDateProblem(draft: string): string | null {
   }
   return null;
 }
+
+const ERROR_TEXT = "text-[13px] font-semibold text-danger-fg";
 
 export default function CaseDetail({
   item,
@@ -78,17 +81,17 @@ export default function CaseDetail({
     return (
       <section
         aria-labelledby="case-detail-title"
-        className="surface-card border-dashed p-5"
+        className="surface-card flex flex-col gap-1 border-dashed p-5"
       >
         <h3
           id="case-detail-title"
           ref={headingRef}
           tabIndex={-1}
-          className="text-base font-semibold outline-none"
+          className="text-lg font-bold tracking-tight outline-none"
         >
           체크리스트
         </h3>
-        <p className="mt-1 text-sm text-muted">
+        <p className="text-sm text-muted">
           목록에서 물건을 선택하면 낙찰일과 체크리스트가 여기에 표시됩니다.
         </p>
       </section>
@@ -97,6 +100,7 @@ export default function CaseDetail({
 
   const caseId = item.id;
   const incompleteCount = item.totalCount - item.completedCount;
+  const percent = item.totalCount > 0 ? (item.completedCount / item.totalCount) * 100 : 0;
   // 응답 순서에 따라 오래된 값이 덮어쓰지 않도록, 저장 중에는 다른 저장을 받지 않는다
   const busy = pending !== null || savingBid || savingRegNo;
   const bidDirty = draft !== (item.bidDate ?? "");
@@ -181,200 +185,230 @@ export default function CaseDetail({
   return (
     <section
       aria-labelledby="case-detail-title"
-      className="surface-card flex flex-col gap-4 p-5"
+      className="surface-card accent-top flex flex-col gap-5 p-5 pt-6"
     >
-      <div className="flex flex-col gap-1">
+      {/* 머리글: 작은 윗글 + 제목 + 담당자 구분값 */}
+      <header className="flex flex-col gap-1.5">
+        <p className="text-[11px] font-bold tracking-[0.16em] text-muted">매각결정 체크리스트</p>
         <h3
           id="case-detail-title"
           ref={headingRef}
           tabIndex={-1}
-          className="text-base font-semibold outline-none"
+          className="text-[22px] font-bold leading-tight tracking-tight outline-none"
         >
           {item.caseNo} 체크리스트
         </h3>
-        <p className="text-sm text-muted">구분값 {item.ownerCode}</p>
-      </div>
+        <p className="text-[13px] text-muted">구분값 {item.ownerCode}</p>
+      </header>
 
-      {/* 낙찰일 · 매각결정기일 · 기한 상태 */}
-      <div className="flex flex-col gap-3 rounded-md bg-surface p-3">
-        {editable ? (
-          <div className="flex flex-col gap-2">
-            <label htmlFor={bidInputId} className="text-sm font-medium">
-              낙찰일
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                id={bidInputId}
-                type="date"
-                min={BID_DATE_MIN}
-                max={BID_DATE_MAX}
-                ref={bidInputRef}
-                value={draft}
-                onChange={(event) => {
-                  if (busy) return;
-                  setDraft(event.target.value);
-                  setBidBadInput(event.target.validity.badInput);
+      {/* 낙찰일 · 매각결정기일 · 기한 상태 (논리 묶음별로 나눈 흰 구역) */}
+      <div className="flex flex-col gap-3">
+        <div className="sub-panel">
+          <h4 className="section-title">낙찰일</h4>
+          {editable ? (
+            <div className="flex flex-col gap-2">
+              {/* 구역 제목이 같은 말을 보여 주므로, 입력칸의 이름표는 화면 낭독기용으로만 둔다 */}
+              <label htmlFor={bidInputId} className="sr-only">
+                낙찰일
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  id={bidInputId}
+                  type="date"
+                  min={BID_DATE_MIN}
+                  max={BID_DATE_MAX}
+                  ref={bidInputRef}
+                  value={draft}
+                  onChange={(event) => {
+                    if (busy) return;
+                    setDraft(event.target.value);
+                    setBidBadInput(event.target.validity.badInput);
+                    setBidNotice(null);
+                    setBidError(null);
+                  }}
+                  aria-busy={savingBid}
+                  aria-invalid={draftIssue !== null}
+                  className="field w-auto min-w-44"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (bidSaveBlocked) return;
+                    saveBidDate(draft === "" ? null : draft);
+                  }}
+                  aria-disabled={bidSaveBlocked}
+                  className="btn btn-primary"
+                >
+                  {savingBid ? "저장 중..." : "저장"}
+                </button>
+                {item.bidDate && (
+                  <button
+                    type="button"
+                    onClick={() => saveBidDate(null)}
+                    aria-disabled={busy}
+                    className="btn btn-secondary"
+                  >
+                    낙찰일 지우기
+                  </button>
+                )}
+              </div>
+              {draftIssue && (
+                <p role="alert" className={ERROR_TEXT}>
+                  {draftIssue}
+                </p>
+              )}
+              {bidError && (
+                <p role="alert" className={ERROR_TEXT}>
+                  {bidError}
+                </p>
+              )}
+              <p aria-live="polite" className="min-h-4 text-xs text-muted">
+                {bidNotice}
+              </p>
+              {/* Plan SC: FR-15~17 — 온비드 공개 정보 조회로 낙찰일을 채운다(저장은 담당자가 확인한 뒤) */}
+              <OnbidLookup
+                caseId={caseId}
+                blocked={busy}
+                bidDateAllowed={(ymd) => bidDateProblem(ymd) === null}
+                onFill={(ymd) => {
+                  setDraft(ymd);
+                  setBidBadInput(false);
                   setBidNotice(null);
                   setBidError(null);
                 }}
-                aria-busy={savingBid}
-                className="min-h-11 rounded-md border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
               />
-              <button
-                type="button"
-                onClick={() => {
-                  if (bidSaveBlocked) return;
-                  saveBidDate(draft === "" ? null : draft);
-                }}
-                aria-disabled={bidSaveBlocked}
-                className="min-h-11 rounded-md border border-foreground bg-foreground px-4 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-              >
-                {savingBid ? "저장 중..." : "저장"}
-              </button>
-              {item.bidDate && (
-                <button
-                  type="button"
-                  onClick={() => saveBidDate(null)}
-                  aria-disabled={busy}
-                  className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-                >
-                  낙찰일 지우기
-                </button>
+            </div>
+          ) : (
+            <p className="text-sm">
+              <span className="sr-only">낙찰일 </span>
+              {item.bidDate ? formatYmdWithWeekday(item.bidDate) : "아직 입력되지 않았습니다."}
+            </p>
+          )}
+        </div>
+
+        <div className="sub-panel">
+          <h4 className="section-title">매각결정기일</h4>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="sr-only">매각결정기일</span>
+              {item.decisionDate ? (
+                <>
+                  <strong className="text-base">{formatYmdWithWeekday(item.decisionDate)}</strong>
+                  <StatusBadge status={item.deadlineStatus} />
+                </>
+              ) : (
+                <span className="text-muted">
+                  {editable
+                    ? "낙찰일을 입력해 주세요."
+                    : "낙찰일이 입력되면 표시됩니다."}
+                </span>
               )}
             </div>
-            {draftIssue && (
-              <p role="alert" className="text-sm font-medium text-danger-fg">
-                {draftIssue}
+            {item.decisionDate && item.isComplete && (
+              <p className="text-xs text-muted">
+                6개 항목이 모두 완료되어 기한 상태(&ldquo;임박&rdquo;, &ldquo;기일 경과&rdquo;)는 표시하지 않습니다.
               </p>
             )}
-            {bidError && (
-              <p role="alert" className="text-sm font-medium text-danger-fg">
-                {bidError}
+            {item.holidayRangeWarning && (
+              <p role="note" className="text-xs font-semibold text-warn-fg">
+                ※ 공휴일 목록(2026~2027년) 범위 밖이라 매각결정기일이 정확하지 않을 수 있습니다.
               </p>
             )}
-            <p aria-live="polite" className="min-h-4 text-xs text-muted">
-              {bidNotice}
+            <p className="text-xs leading-relaxed text-muted">
+              낙찰일 다음 영업일부터 세어 7영업일째 날이며, 주말과 공휴일은 제외합니다.
+              기일 2영업일 전부터 &ldquo;임박&rdquo;으로 표시합니다.
             </p>
-            {/* Plan SC: FR-15~17 — 온비드 공개 정보 조회로 낙찰일을 채운다(저장은 담당자가 확인한 뒤) */}
-            <OnbidLookup
-              caseId={caseId}
-              blocked={busy}
-              bidDateAllowed={(ymd) => bidDateProblem(ymd) === null}
-              onFill={(ymd) => {
-                setDraft(ymd);
-                setBidBadInput(false);
-                setBidNotice(null);
-                setBidError(null);
-              }}
-            />
           </div>
-        ) : (
-          <p className="text-sm">
-            <span className="font-medium">낙찰일</span>{" "}
-            {item.bidDate ? formatYmdWithWeekday(item.bidDate) : "아직 입력되지 않았습니다."}
-          </p>
-        )}
-
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-medium">매각결정기일</span>
-            {item.decisionDate ? (
-              <>
-                <strong>{formatYmdWithWeekday(item.decisionDate)}</strong>
-                <StatusBadge status={item.deadlineStatus} />
-              </>
-            ) : (
-              <span className="text-muted">
-                {editable
-                  ? "낙찰일을 입력해 주세요."
-                  : "낙찰일이 입력되면 표시됩니다."}
-              </span>
-            )}
-          </div>
-          {item.decisionDate && item.isComplete && (
-            <p className="text-xs text-muted">
-              6개 항목이 모두 완료되어 기한 상태(&ldquo;임박&rdquo;, &ldquo;기일 경과&rdquo;)는 표시하지 않습니다.
-            </p>
-          )}
-          {item.holidayRangeWarning && (
-            <p role="note" className="text-xs font-medium text-warn-fg">
-              ※ 공휴일 목록(2026~2027년) 범위 밖이라 매각결정기일이 정확하지 않을 수 있습니다.
-            </p>
-          )}
-          <p className="text-xs text-muted">
-            낙찰일 다음 영업일부터 세어 7영업일째 날이며, 주말과 공휴일은 제외합니다.
-            기일 2영업일 전부터 &ldquo;임박&rdquo;으로 표시합니다.
-          </p>
         </div>
       </div>
 
+      {/* 진행 현황: 실제 완료 수와 전체 수 */}
       <div className="flex flex-col gap-2">
-        <p
-          aria-live="polite"
-          className={
-            "text-sm font-semibold " + (item.isComplete ? "text-ok-fg" : "text-foreground")
-          }
-        >
-          {item.isComplete
-            ? `매각결정 완료 (${item.completedCount}/${item.totalCount})`
-            : `미완료 ${incompleteCount}개 (${item.completedCount}/${item.totalCount})`}
-        </p>
-        <div aria-hidden="true" className="h-2 w-full overflow-hidden rounded-full bg-surface">
-          <div
-            className="h-full bg-linear-to-r from-[#ad355b] to-[#ff5a1f] transition-[width]"
-            style={{ width: `${(item.completedCount / item.totalCount) * 100}%` }}
-          />
+        <div className="flex items-end justify-between gap-3">
+          <p
+            aria-live="polite"
+            className={
+              "text-sm font-semibold " + (item.isComplete ? "text-ok-fg" : "text-foreground")
+            }
+          >
+            {item.isComplete
+              ? `매각결정 완료 (${item.completedCount}/${item.totalCount})`
+              : `미완료 ${incompleteCount}개 (${item.completedCount}/${item.totalCount})`}
+          </p>
+          <span aria-hidden="true" className="shrink-0 tabular-nums leading-none">
+            <span className="text-[28px] font-bold tracking-tight">{item.completedCount}</span>
+            <span className="text-sm font-semibold text-muted"> / {item.totalCount}</span>
+          </span>
+        </div>
+        <div className={"progress " + (item.isComplete ? "progress-done" : "")} aria-hidden="true">
+          <span style={{ width: `${percent}%` }} />
         </div>
       </div>
 
-      <ul className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-2.5">
         {CHECKLIST_ITEMS.map((check) => {
           const saved = item.checks[check.key] ?? null;
           const shown = pending?.key === check.key ? pending.state : saved;
           const rowError = error?.key === check.key ? error.message : null;
           return (
-            <li key={check.key} className="flex flex-col gap-2 rounded-md bg-surface p-3">
+            <li
+              key={check.key}
+              className="item-card"
+              data-state={shown === "done" ? "done" : shown === "na" ? "na" : "none"}
+            >
               {editable ? (
-                <fieldset className="flex flex-col gap-2">
-                  <legend className="text-sm font-medium">{check.label}</legend>
-                  <div className="flex flex-wrap gap-2">
-                    {OPTIONS.map((option) => (
-                      <label
-                        key={option.label}
-                        className={"cursor-pointer " + (busy ? "opacity-60" : "")}
-                      >
-                        <input
-                          type="radio"
-                          name={`${caseId}-${check.key}`}
-                          checked={shown === option.value}
-                          onChange={() => handleChange(check.key, option.value)}
-                          className="peer sr-only"
-                        />
-                        <span
-                          className={
-                            "inline-flex min-h-11 min-w-20 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors " +
-                            "border-border bg-background text-foreground " +
-                            "peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background " +
-                            "peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-foreground " +
-                            "peer-disabled:opacity-60"
-                          }
-                        >
-                          {option.label}
-                        </span>
-                      </label>
-                    ))}
+                <fieldset className="min-w-0">
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                    <legend className="sr-only">{check.label}</legend>
+                    <span aria-hidden="true" className="text-[15px] font-semibold leading-snug">
+                      {check.label}
+                    </span>
+                    <div className="seg" data-busy={busy}>
+                      {OPTIONS.map((option) => (
+                        <label key={option.label} className="seg-opt" data-variant={option.variant}>
+                          <input
+                            type="radio"
+                            name={`${caseId}-${check.key}`}
+                            checked={shown === option.value}
+                            onChange={() => handleChange(check.key, option.value)}
+                            className="sr-only"
+                          />
+                          <span>
+                            {option.variant === "done" && (
+                              <svg
+                                className="icon seg-check"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                              >
+                                <path d="M3 8.5l3.2 3.2L13 4.8" />
+                              </svg>
+                            )}
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                   {pending?.key === check.key && (
-                    <p className="text-xs text-muted">저장 중...</p>
+                    <p className="mt-1.5 text-xs text-muted">저장 중...</p>
                   )}
                 </fieldset>
               ) : (
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium">{check.label}</span>
+                  <span className="text-[15px] font-semibold leading-snug">{check.label}</span>
                   <span
                     className={
-                      "shrink-0 text-sm font-semibold " +
-                      (saved === null ? "text-muted" : "text-ok-fg")
+                      "badge shrink-0 " +
+                      (saved === "done"
+                        ? "badge-ok"
+                        : saved === "na"
+                          ? "badge-review"
+                          : "badge-chip")
                     }
                   >
                     {saved === "done" ? "✓ " : saved === "na" ? "– " : "○ "}
@@ -384,8 +418,8 @@ export default function CaseDetail({
               )}
               {check.hasRegNoField &&
                 (editable ? (
-                  <div className="flex flex-col gap-2 border-t border-border pt-3">
-                    <label htmlFor={regNoInputId} className="text-sm font-medium">
+                  <div className="flex flex-col gap-2 border-t border-line pt-3">
+                    <label htmlFor={regNoInputId} className="field-label">
                       송달 등기번호
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
@@ -403,7 +437,7 @@ export default function CaseDetail({
                         autoComplete="off"
                         readOnly={busy}
                         placeholder={`등기번호 (최대 ${DELIVERY_REG_NO_MAX}자)`}
-                        className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground read-only:opacity-60"
+                        className="field min-w-0 flex-1"
                       />
                       <button
                         type="button"
@@ -412,7 +446,7 @@ export default function CaseDetail({
                           saveRegNo(regNoDraft.trim() === "" ? null : regNoDraft.trim());
                         }}
                         aria-disabled={regNoSaveBlocked}
-                        className="min-h-11 rounded-md border border-foreground bg-foreground px-4 text-sm font-medium text-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                        className="btn btn-primary"
                       >
                         {savingRegNo ? "저장 중..." : "저장"}
                       </button>
@@ -421,17 +455,17 @@ export default function CaseDetail({
                           type="button"
                           onClick={() => saveRegNo(null)}
                           aria-disabled={busy}
-                          className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                          className="btn btn-secondary"
                         >
                           등기번호 지우기
                         </button>
                       )}
                     </div>
-                    <p className="text-xs text-muted">
+                    <p className="field-hint">
                       등기번호는 숫자와 하이픈(-)만 입력할 수 있습니다. 이름·연락처 등 다른 개인정보는 적지 마세요.
                     </p>
                     {regNoError && (
-                      <p role="alert" className="text-sm font-medium text-danger-fg">
+                      <p role="alert" className={ERROR_TEXT}>
                         {regNoError}
                       </p>
                     )}
@@ -440,8 +474,8 @@ export default function CaseDetail({
                     </p>
                   </div>
                 ) : (
-                  <p className="border-t border-border pt-3 text-sm">
-                    <span className="font-medium">송달 등기번호</span>{" "}
+                  <p className="border-t border-line pt-3 text-sm">
+                    <span className="font-semibold">송달 등기번호</span>{" "}
                     {item.deliveryRegNo ? (
                       <span className="break-all">{item.deliveryRegNo}</span>
                     ) : (
@@ -450,7 +484,7 @@ export default function CaseDetail({
                   </p>
                 ))}
               {rowError && (
-                <p role="alert" className="text-sm font-medium text-danger-fg">
+                <p role="alert" className={ERROR_TEXT}>
                   {rowError}
                 </p>
               )}

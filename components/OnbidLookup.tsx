@@ -62,36 +62,48 @@ export default function OnbidLookup({
   const info = outcome && outcome.kind !== "problem" ? outcome.info : [];
 
   return (
-    <div className="flex flex-col gap-2 border-t border-border pt-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-2 border-t border-line pt-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <button
           type="button"
           onClick={handleLookup}
           aria-disabled={loading || blocked}
-          className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          className="btn btn-secondary"
         >
+          <svg
+            className="icon"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <circle cx="7" cy="7" r="4.4" />
+            <path d="M10.4 10.4L14 14" />
+          </svg>
           {loading ? "온비드 조회 중..." : "온비드에서 낙찰일 조회"}
         </button>
-        <span className="text-xs text-muted">
+        <span className="field-hint min-w-0 flex-1 basis-56">
           물건번호로 온비드에 공개된 정보만 읽어 옵니다. 앱의 내용은 온비드로 보내지 않습니다.
         </span>
       </div>
       <p
         aria-live="polite"
         className={
-          "text-sm " +
-          (outcome?.kind === "problem" ? "font-medium text-warn-fg" : "text-foreground")
+          "text-[13px] " +
+          (outcome?.kind === "problem" ? "font-semibold text-warn-fg" : "text-foreground")
         }
       >
         {outcome?.message}
       </p>
       {outcome && outcome.kind !== "problem" && outcome.sample && (
-        <p className="rounded-md bg-notice-bg px-3 py-2 text-xs font-medium text-notice-fg">
+        <p className="rounded-xl bg-notice-bg px-3 py-2 text-xs font-semibold text-notice-fg">
           ※ 가상(샘플) 데이터입니다. 실제 온비드 정보가 아니라 시험용으로 지어낸 값입니다.
         </p>
       )}
       {info.length > 0 && (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-md border border-border bg-background p-3 text-sm">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rounded-xl border border-line bg-surface-soft p-3 text-[13px]">
           {info.map((row) => (
             <div key={row.label} className="contents">
               <dt className="text-muted">{row.label}</dt>

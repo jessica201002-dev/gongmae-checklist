@@ -143,7 +143,7 @@ export default function CaseBoard() {
         <CaseForm ownerCode={user.ownerCode} onCreated={handleCreated} />
       )}
       {editable && !user?.ownerCode && (
-        <p role="alert" className="text-sm font-medium text-danger-fg">
+        <p role="alert" className="text-[13px] font-semibold text-danger-fg">
           계정에 담당자 구분값이 없어 물건을 보거나 등록할 수 없습니다. 관리자에게 문의해 주세요.
         </p>
       )}
@@ -157,18 +157,18 @@ export default function CaseBoard() {
         {notice}
       </p>
       {actionError && (
-        <p role="alert" className="text-sm font-medium text-danger-fg">
+        <p role="alert" className="text-[13px] font-semibold text-danger-fg">
           {actionError}
         </p>
       )}
 
       {loadError ? (
         <div role="alert" className="flex flex-col items-start gap-2">
-          <p className="text-sm font-medium text-danger-fg">{loadError}</p>
+          <p className="text-[13px] font-semibold text-danger-fg">{loadError}</p>
           <button
             type="button"
             onClick={retry}
-            className="min-h-11 rounded-md border border-border px-4 text-sm font-medium hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+            className="btn btn-secondary"
           >
             다시 시도
           </button>
@@ -197,7 +197,7 @@ export default function CaseBoard() {
           <button
             type="button"
             onClick={() => setReloadKey((key) => key + 1)}
-            className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+            className="btn btn-secondary btn-sm"
           >
             목록 새로고침
           </button>

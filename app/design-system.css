@@ -1,0 +1,473 @@
+/* ───────────────────────────────────────────────────────────────
+   디자인 시스템: 앱 전체가 함께 쓰는 토큰과 공통 부품(버튼·입력·배지·진행률·카드·분할 선택)
+   대시보드의 로즈·퍼플·코랄·네이비를 정체성으로 삼고, 다른 화면에서는 작은 강조선·배지·진행률·포커스 링으로 절제해서 반복한다.
+   ※ 색에만 기대지 않는다: 상태는 항상 글자(와 아이콘)로도 함께 적는다.
+   ─────────────────────────────────────────────────────────────── */
+:root {
+  --purple: #8c61ae;
+  --purple-ink: #5e3a84;
+  --purple-light: #f2ebf8;
+  --rose-light: #f8eaf0;
+  --rose-ink: #8c2a4c;
+  --coral: #dd523c;
+  --coral-light: #fff0e9;
+  --navy: #344f70;
+  --navy-light: #eaf0f7;
+  --warning: #bc781a;
+  --success: #21836c;
+  --success-ink: #176452;
+  --success-light: #e9f5f0;
+  --warning-light: #fff4e2;
+  --danger-light: #fcedef;
+
+  --surface-soft: #f8f8fa;
+  --surface-hover: #f3f1f5;
+  --text-secondary: #626775;
+  --control-border: #8e94a2;
+  --control-border-hover: #6b7180;
+  --focus-ring: rgba(173, 53, 91, 0.28);
+  --track: #eceef2;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --purple: #b48ad6;
+    --purple-ink: #dcc6f2;
+    --purple-light: rgba(180, 138, 214, 0.16);
+    --rose-light: rgba(224, 112, 143, 0.16);
+    --rose-ink: #f3b3c6;
+    --coral-light: rgba(240, 120, 90, 0.16);
+    --navy-light: rgba(120, 160, 210, 0.16);
+    --success: #4fb89c;
+    --success-ink: #9be0cb;
+    --success-light: rgba(79, 184, 156, 0.16);
+    --warning-light: rgba(230, 170, 70, 0.16);
+    --danger-light: rgba(240, 110, 120, 0.16);
+    --surface-soft: #1b1e24;
+    --surface-hover: #22262d;
+    --text-secondary: #b3b7c0;
+    --control-border: #6a707d;
+    --control-border-hover: #8a90a0;
+    --focus-ring: rgba(224, 112, 143, 0.4);
+    --track: #2a2d34;
+  }
+}
+
+/* ───── 버튼 ───── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+.btn-sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.btn-primary {
+  background: var(--rose);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(173, 53, 91, 0.25);
+}
+.btn-primary:hover {
+  background: #98294d;
+  box-shadow: 0 6px 14px rgba(173, 53, 91, 0.3);
+}
+.btn-dark {
+  background: #25282f;
+  color: #fff;
+}
+.btn-dark:hover {
+  background: #14161b;
+}
+.btn-secondary {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--control-border);
+}
+.btn-secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--control-border-hover);
+  box-shadow: var(--shadow-soft);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn-ghost:hover {
+  background: var(--surface-soft);
+  color: var(--foreground);
+}
+.btn-danger {
+  background: transparent;
+  color: var(--danger-fg);
+  border-color: var(--line);
+}
+.btn-danger:hover {
+  background: var(--danger-light);
+  border-color: var(--danger-fg);
+}
+/* 눌러도 동작하지 않는 상태(aria-disabled): 흐린 중립색이지만 글자는 읽힌다 */
+.btn[aria-disabled="true"],
+.btn:disabled {
+  cursor: not-allowed;
+  background: var(--surface-soft);
+  border-color: var(--line);
+  color: var(--muted);
+  box-shadow: none;
+  transform: none;
+}
+
+/* ───── 입력 (텍스트·날짜·선택) ───── */
+.field {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--control-border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 14px;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+.field::placeholder {
+  color: var(--muted);
+}
+.field:hover {
+  border-color: var(--control-border-hover);
+}
+.field:focus-visible {
+  outline: none;
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.field[readonly] {
+  background: var(--surface-soft);
+}
+.field[aria-invalid="true"] {
+  border-color: var(--danger-fg);
+}
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.field-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ───── 배지 ───── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.badge-danger {
+  background: var(--danger-light);
+  color: var(--danger-fg);
+}
+.badge-warn {
+  background: var(--warning-light);
+  color: var(--warn-fg);
+}
+.badge-ok {
+  background: var(--success-light);
+  color: var(--success-ink);
+}
+.badge-review {
+  background: var(--purple-light);
+  color: var(--purple-ink);
+}
+.badge-chip {
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  border: 1px solid var(--line);
+}
+
+/* ───── 진행률 ───── */
+.progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--track);
+}
+.progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--rose), var(--purple));
+  transition: width 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.progress-done > span {
+  background: linear-gradient(90deg, var(--success), #5bc0a4);
+}
+
+/* ───── 카드: 얇은 로즈→퍼플→코랄 강조선, 구역 제목 ───── */
+.accent-top {
+  position: relative;
+}
+.accent-top::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(90deg, var(--rose), var(--purple) 55%, var(--coral));
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--foreground);
+}
+.section-title::before {
+  content: "";
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--rose), var(--purple));
+}
+.sub-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+/* ───── 체크리스트 항목 카드 (상태에 따라 왼쪽 강조선만 바뀐다) ───── */
+.item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--control-border);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  transition:
+    border-color 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.item-card[data-state="done"] {
+  border-left-color: var(--success);
+}
+.item-card[data-state="na"] {
+  border-left-color: var(--purple);
+}
+
+/* ───── 분할 선택(segmented control): 기본 라디오 버튼을 그대로 쓰고 모양만 바꾼다 ───── */
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+.seg-opt {
+  position: relative;
+  cursor: pointer;
+}
+.seg-opt > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 78px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease;
+}
+.seg-opt:hover > span {
+  background: var(--card);
+}
+.seg-opt > input:focus-visible + span {
+  outline: 2px solid var(--rose);
+  outline-offset: 2px;
+}
+.seg-opt > input:checked + span {
+  box-shadow: var(--shadow-soft);
+}
+.seg-opt[data-variant="none"] > input:checked + span {
+  background: #2b2f38;
+  color: #fff;
+}
+.seg-opt[data-variant="done"] > input:checked + span {
+  background: var(--success-light);
+  border-color: var(--success);
+  color: var(--success-ink);
+}
+.seg-opt[data-variant="na"] > input:checked + span {
+  background: var(--purple-light);
+  border-color: var(--purple);
+  color: var(--purple-ink);
+}
+.seg-opt .seg-check {
+  display: none;
+}
+.seg-opt[data-variant="done"] > input:checked + span .seg-check {
+  display: inline-block;
+}
+.seg[data-busy="true"] {
+  opacity: 0.65;
+}
+@media (pointer: coarse) {
+  .seg-opt > span {
+    min-height: 44px;
+  }
+  .btn {
+    min-height: 44px;
+  }
+}
+
+/* ───── 목록 카드: 왼쪽 상태 표시선 ───── */
+.list-card {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.list-card::before {
+  content: "";
+  flex: none;
+  width: 4px;
+  background: var(--control-border);
+}
+.list-card[data-tone="danger"]::before {
+  background: var(--danger-fg);
+}
+.list-card[data-tone="warn"]::before {
+  background: var(--warning);
+}
+.list-card[data-tone="ok"]::before {
+  background: var(--success);
+}
+.list-card[data-tone="review"]::before {
+  background: linear-gradient(180deg, var(--rose), var(--purple));
+}
+.list-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--control-border);
+  box-shadow: var(--shadow-card);
+}
+.list-card[data-selected="true"] {
+  border-color: var(--rose);
+  box-shadow:
+    0 0 0 1px var(--rose),
+    var(--shadow-card);
+  background: linear-gradient(90deg, var(--rose-light), var(--card) 38%);
+}
+.list-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 8px 14px 6px;
+  text-align: left;
+  border-radius: 10px;
+}
+.list-main:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: -2px;
+}
+
+/* 아이콘 크기 */
+.icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* 계정 표시의 동그란 머리글자 */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--rose), var(--purple));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .field,
+  .seg-opt > span,
+  .item-card,
+  .list-card,
+  .progress > span {
+    transition: none;
+  }
+  .btn:hover,
+  .list-card:hover {
+    transform: none;
+  }
+}

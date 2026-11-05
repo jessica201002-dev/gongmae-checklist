@@ -13,22 +13,21 @@ export default function AccountBar() {
 
   return (
     <div className="flex flex-col gap-2 sm:items-end">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="rounded-full bg-surface px-3 py-1 font-semibold">{info.label}</span>
+      <div className="flex flex-wrap items-center gap-2.5 text-sm">
+        <span aria-hidden="true" className="avatar">
+          {user.loginId.slice(0, 1).toUpperCase()}
+        </span>
+        <span className="badge badge-review">{info.label}</span>
         <span>
           <span className="sr-only">로그인 계정: </span>
           <strong>{user.loginId}</strong>
           {user.ownerCode && <span className="text-muted"> · 구분값 {user.ownerCode}</span>}
         </span>
-        <button
-          type="button"
-          onClick={() => void logout()}
-          className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
-        >
+        <button type="button" onClick={() => void logout()} className="btn btn-secondary btn-sm">
           로그아웃
         </button>
       </div>
-      <p className="text-sm text-muted">{info.description}</p>
+      <p className="text-[13px] text-muted">{info.description}</p>
     </div>
   );
 }

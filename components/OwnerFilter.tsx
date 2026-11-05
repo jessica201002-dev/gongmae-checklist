@@ -16,14 +16,14 @@ export default function OwnerFilter({
   const selectId = useId();
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <label htmlFor={selectId} className="text-sm font-medium">
+      <label htmlFor={selectId} className="field-label">
         구분값별로 보기
       </label>
       <select
         id={selectId}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-11 rounded-md border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+        className="field w-auto min-w-36"
       >
         <option value="">전체</option>
         {owners.map((owner) => (

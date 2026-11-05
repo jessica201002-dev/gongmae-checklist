@@ -6,10 +6,6 @@ import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
 import { CASE_NO_FORMAT_HINT, CASE_NO_PATTERN, OWNER_CODE_MAX } from "@/lib/validation";
 
-const inputClass =
-  "min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground " +
-  "placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground";
-
 export default function CaseForm({
   ownerCode,
   onCreated,
@@ -69,11 +65,12 @@ export default function CaseForm({
       onSubmit={handleSubmit}
       noValidate
       aria-label="물건 등록"
-      className="surface-card flex flex-col gap-3 p-4"
+      className="surface-card accent-top flex flex-col gap-3 p-5 pt-6"
     >
+      <h4 className="section-title">물건 등록</h4>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1">
-          <label htmlFor={caseNoId} className="text-sm font-medium">
+          <label htmlFor={caseNoId} className="field-label">
             물건번호
           </label>
           <input
@@ -86,14 +83,14 @@ export default function CaseForm({
             inputMode="numeric"
             aria-describedby={`${caseNoId}-hint`}
             placeholder="예: 2026-01234-001"
-            className={inputClass}
+            className="field"
           />
-          <span id={`${caseNoId}-hint`} className="text-xs text-muted">
+          <span id={`${caseNoId}-hint`} className="field-hint">
             앞 4자리는 연도, 가운데 5자리는 공고번호(첫 자리는 0 또는 1), 뒤 3자리는 구분번호입니다.
           </span>
         </div>
         <div className="flex flex-1 flex-col gap-1">
-          <label htmlFor={ownerCodeId} className="text-sm font-medium">
+          <label htmlFor={ownerCodeId} className="field-label">
             담당자 구분값
           </label>
           <input
@@ -102,22 +99,22 @@ export default function CaseForm({
             readOnly
             maxLength={OWNER_CODE_MAX}
             aria-describedby={`${ownerCodeId}-hint`}
-            className={inputClass + " read-only:bg-surface"}
+            className="field"
           />
-          <span id={`${ownerCodeId}-hint`} className="text-xs text-muted">
+          <span id={`${ownerCodeId}-hint`} className="field-hint">
             로그인한 계정의 구분값으로 등록됩니다.
           </span>
         </div>
         <button
           type="submit"
           aria-disabled={submitting}
-          className="min-h-11 rounded-md border border-foreground bg-foreground px-5 text-sm font-medium text-background transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:opacity-60"
+          className="btn btn-primary sm:mb-[22px] sm:min-w-24"
         >
           {submitting ? "등록 중..." : "등록"}
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-sm font-medium text-danger-fg">
+        <p role="alert" className="text-[13px] font-semibold text-danger-fg">
           {error}
         </p>
       )}

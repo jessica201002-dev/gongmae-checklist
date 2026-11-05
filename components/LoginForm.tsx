@@ -7,9 +7,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { login, useSession } from "@/lib/useSession";
 
-const inputClass =
-  "min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground " +
-  "placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -73,11 +70,11 @@ export default function LoginForm() {
         onSubmit={handleSubmit}
         noValidate
         aria-label="로그인"
-        className="surface-card reveal flex flex-col gap-4 p-5"
+        className="surface-card accent-top reveal flex flex-col gap-4 p-6 pt-7"
         style={{ animationDelay: "80ms" }}
       >
         <div className="flex flex-col gap-1">
-          <label htmlFor={idInputId} className="text-sm font-medium">
+          <label htmlFor={idInputId} className="field-label">
             아이디
           </label>
           <input
@@ -88,11 +85,11 @@ export default function LoginForm() {
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
-            className={inputClass}
+            className="field"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor={pwInputId} className="text-sm font-medium">
+          <label htmlFor={pwInputId} className="field-label">
             비밀번호
           </label>
           <input
@@ -103,18 +100,18 @@ export default function LoginForm() {
             onChange={(event) => setPassword(event.target.value)}
             maxLength={200}
             autoComplete="current-password"
-            className={inputClass}
+            className="field"
           />
         </div>
         {error && (
-          <p role="alert" className="text-sm font-medium text-danger-fg">
+          <p role="alert" className="text-[13px] font-semibold text-danger-fg">
             {error}
           </p>
         )}
         <button
           type="submit"
           aria-disabled={submitting}
-          className="min-h-11 rounded-md border border-foreground bg-foreground px-5 text-sm font-medium text-background transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground aria-disabled:opacity-60"
+          className="btn btn-primary w-full"
         >
           {submitting ? "로그인 중..." : "로그인"}
         </button>
