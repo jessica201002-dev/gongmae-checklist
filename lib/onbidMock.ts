@@ -8,7 +8,7 @@ import { todayInSeoul } from "./deadline";
 import type { OnbidLookupResult } from "./onbidTypes";
 
 export interface OnbidSample {
-  /** 가상 물건번호 (0000-00000-000 모양, 앞 4자리 9001은 가상임을 뜻한다) */
+  /** 가상 물건번호 (연도4자리-공고번호5자리-구분번호3자리 모양. 공고번호를 9로 시작하게 해 가상임을 구분한다) */
   caseNo: string;
   /** 낙찰일이 오늘로부터 몇 영업일 전인지. null이면 낙찰일 없음(아직 낙찰 전) */
   bidBusinessDaysAgo: number | null;
@@ -18,7 +18,7 @@ export interface OnbidSample {
 
 export const ONBID_SAMPLES: readonly OnbidSample[] = [
   {
-    caseNo: "9001-00001-001",
+    caseNo: "2026-90001-001",
     bidBusinessDaysAgo: 5, // 기일 2영업일 전 → "임박"이 되는 낙찰일
     info: [
       { label: "물건명", value: "가상 아파트 1동 101호" },
@@ -28,7 +28,7 @@ export const ONBID_SAMPLES: readonly OnbidSample[] = [
     ],
   },
   {
-    caseNo: "9001-00002-001",
+    caseNo: "2026-90001-002",
     bidBusinessDaysAgo: 12, // 기일이 이미 지남 → "기일 경과"
     info: [
       { label: "물건명", value: "가상 상가 2층 202호" },
@@ -38,7 +38,7 @@ export const ONBID_SAMPLES: readonly OnbidSample[] = [
     ],
   },
   {
-    caseNo: "9001-00003-001",
+    caseNo: "2025-90002-001",
     bidBusinessDaysAgo: 1, // 기일까지 여유 있음 → 기한 표시 없음
     info: [
       { label: "물건명", value: "가상 토지 (임야)" },
@@ -48,7 +48,7 @@ export const ONBID_SAMPLES: readonly OnbidSample[] = [
     ],
   },
   {
-    caseNo: "9001-00004-001",
+    caseNo: "2025-90002-002",
     bidBusinessDaysAgo: null, // 낙찰 전 → 낙찰일 정보 없음 안내를 확인하는 용도
     info: [
       { label: "물건명", value: "가상 오피스텔 5층 505호" },
@@ -58,7 +58,7 @@ export const ONBID_SAMPLES: readonly OnbidSample[] = [
     ],
   },
   {
-    caseNo: "9001-00005-001",
+    caseNo: "2024-90003-001",
     bidBusinessDaysAgo: 3,
     info: [
       { label: "물건명", value: "가상 다세대주택 3층 301호" },
@@ -68,7 +68,7 @@ export const ONBID_SAMPLES: readonly OnbidSample[] = [
     ],
   },
   {
-    caseNo: "9001-00006-001",
+    caseNo: "2024-90003-002",
     bidBusinessDaysAgo: 20, // 오래전 낙찰 → 6개 항목을 모두 완료한 물건 시연용
     info: [
       { label: "물건명", value: "가상 공장 부지" },
