@@ -1,6 +1,6 @@
 // Design Ref: §6 — 서버 API 공통 도우미: 응답 형식, 역할 확인, 요청 읽기, 오류 응답
 // 성공: { "data": ... }  /  오류: { "error": { "code": "...", "message": "...", "details": {} } }
-import { CaseNotFoundError, DuplicateCaseError } from "./db/cases";
+import { CaseNotFoundError, ConfirmOrderError, DuplicateCaseError } from "./db/cases";
 import { canEdit } from "./role";
 import { readSession, type SessionUser } from "./session";
 
@@ -9,6 +9,7 @@ export type ApiErrorCode =
   | "UNAUTHORIZED"
   | "ROLE_FORBIDDEN"
   | "ORIGIN_FORBIDDEN"
+  | "CONFIRM_ORDER"
   | "RATE_LIMITED"
   | "CASE_NOT_FOUND"
   | "CASE_DUPLICATE"
@@ -111,6 +112,9 @@ export function toErrorResponse(error: unknown): Response {
     return fail("CASE_DUPLICATE", "이미 등록된 물건번호입니다.", 409);
   }
   if (error instanceof CaseNotFoundError) return notFound();
+  if (error instanceof ConfirmOrderError) {
+    return fail("CONFIRM_ORDER", "담당자 확인이 먼저 필요합니다.", 409);
+  }
   console.error(
     "[api] 처리 중 오류:",
     error instanceof Error ? error.message : "알 수 없는 오류",

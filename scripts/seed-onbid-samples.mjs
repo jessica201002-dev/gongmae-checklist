@@ -43,6 +43,24 @@ const PLAN = {
   "2024-19003-002": { owner: "담당-03", checks: { ...done("delivery", "benefit", "appraisal", "suspension_doc", "field_survey"), area_match: "na" } },
 };
 
+// 결재선 확인 표시 시연용: 일부는 담당자·팀장 모두("both"), 일부는 담당자만("staff"), 나머지는 확인 없음
+const CONFIRM_PLAN = {
+  "2024-19003-002": "both", // 6/6 완료 물건
+  "2024-19003-001": "staff",
+  "2026-19001-002": "staff",
+};
+function confirmFields(caseNo, owner) {
+  const plan = CONFIRM_PLAN[caseNo];
+  if (!plan) return {};
+  const daysAgo = (n) => new Date(Date.now() - n * 86_400_000).toISOString();
+  const fields = { staff_confirmed_at: daysAgo(2), staff_confirmed_by: `staff${owner.slice(-2)}` };
+  if (plan === "both") {
+    fields.manager_confirmed_at = daysAgo(1);
+    fields.manager_confirmed_by = "manager01";
+  }
+  return fields;
+}
+
 // lib/onbidMock.ts(와 그것이 쓰는 파일)를 임시 폴더(node_modules/.cache, Git에 올라가지 않음)에서 JavaScript로 바꿔 불러온다
 function loadMock() {
   const outDir = path.join(ROOT, "node_modules", ".cache", "gongmae-seed-onbid");
@@ -87,7 +105,7 @@ async function main() {
     const { owner, checks } = PLAN[n];
     const ins = await db
       .from("cases")
-      .insert({ case_no: n, owner_code: owner })
+      .insert({ case_no: n, owner_code: owner, ...confirmFields(n, owner) })
       .select("id")
       .single();
     if (ins.error) throw new Error(`${n} 저장 실패: ${ins.error.message}`);

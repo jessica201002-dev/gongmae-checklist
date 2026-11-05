@@ -1,6 +1,7 @@
 // Design Ref: §7.1, §7.3, §7.4 — 물건 목록. 물건을 누르면 상세(체크리스트)가 열리고,
 // 담당자에게는 삭제 버튼도 보인다. 팀장·부점장에게는 목록만 보인다(열람 전용). 등록 순으로 보여 준다.
 // 카드는 왼쪽 표시선(기한·완료·검토 필요)과 작은 진행률 바로 상태를 한눈에 보여 주고, 눌러서 상세를 연다.
+import ConfirmChips from "@/components/ConfirmChips";
 import StatusBadge, { ReviewBadge } from "@/components/StatusBadge";
 import type { CaseView } from "@/lib/caseView";
 import { formatYmdWithWeekday } from "@/lib/dateFormat";
@@ -76,6 +77,8 @@ export default function CaseList({
                     : "낙찰일 미입력"}
                 </span>
               </span>
+              {/* 결재선 확인 표시: 담당자 → 팀장 (부점장이 열람한다) */}
+              <ConfirmChips record={item} />
               {/* 진행 현황 (실제 완료 수) */}
               <span className="flex items-center gap-3">
                 <span

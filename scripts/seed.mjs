@@ -109,6 +109,30 @@ function buildSamples(rules, today) {
   ];
 }
 
+// 결재선 확인 표시 시연용: 어떤 물건은 담당자·팀장 모두 확인("both"), 어떤 물건은 담당자만("staff"), 나머지는 확인 없음.
+// 확인한 계정은 샘플 계정 아이디(staff01 등, manager01)와 같게 맞춘다.
+const CONFIRM_PLAN = {
+  "2026-10001-002": "staff",
+  "2026-10002-001": "both",
+  "2025-10003-001": "staff",
+  "2025-10003-002": "both",
+  "2024-10004-001": "staff",
+};
+function confirmFields(sample) {
+  const plan = CONFIRM_PLAN[sample.caseNo];
+  if (!plan) return {};
+  const daysAgo = (n) => new Date(Date.now() - n * 86_400_000).toISOString();
+  const fields = {
+    staff_confirmed_at: daysAgo(2),
+    staff_confirmed_by: `staff${sample.ownerCode.slice(-2)}`,
+  };
+  if (plan === "both") {
+    fields.manager_confirmed_at = daysAgo(1);
+    fields.manager_confirmed_by = "manager01";
+  }
+  return fields;
+}
+
 function describe(rules, sample, today) {
   const decision = sample.bidDate ? rules.deadline.calcDecisionDate(sample.bidDate) : null;
   const complete = rules.checklist.isCaseComplete(sample.checks);
@@ -171,7 +195,7 @@ async function main() {
     for (const s of samples) {
       const { data, error } = await db
         .from("cases")
-        .insert({ case_no: s.caseNo, owner_code: s.ownerCode, bid_date: s.bidDate, delivery_reg_no: s.deliveryRegNo })
+        .insert({ case_no: s.caseNo, owner_code: s.ownerCode, bid_date: s.bidDate, delivery_reg_no: s.deliveryRegNo, ...confirmFields(s) })
         .select("id")
         .single();
       if (error) throw new Error(`${s.caseNo} 등록 실패: ${error.message}`);

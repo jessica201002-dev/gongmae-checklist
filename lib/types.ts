@@ -18,6 +18,12 @@ export interface CaseRecord {
   bidDate: string | null;
   /** 송달 등기번호 (최대 30자). 없으면 null */
   deliveryRegNo: string | null;
+  /** 담당자 확인 시각(ISO)과 확인한 계정 아이디. 확인하지 않았으면 null */
+  staffConfirmedAt: string | null;
+  staffConfirmedBy: string | null;
+  /** 팀장 확인 시각(ISO)과 확인한 계정 아이디. 담당자 확인 뒤에만 있을 수 있다 */
+  managerConfirmedAt: string | null;
+  managerConfirmedBy: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -61,3 +61,22 @@ create table if not exists public.accounts (
 );
 
 alter table public.accounts enable row level security;
+
+-- 5.6 결재선 확인 표시: 담당자 확인 → 팀장 확인 순서 (부점장은 열람만 하고, 결재는 앱 밖에서 한다)
+-- 확인한 시각과 계정 아이디(이름이 아닌 코드)를 함께 남긴다.
+alter table public.cases
+  add column if not exists staff_confirmed_at timestamptz,
+  add column if not exists staff_confirmed_by text,
+  add column if not exists manager_confirmed_at timestamptz,
+  add column if not exists manager_confirmed_by text;
+
+-- 팀장 확인은 담당자 확인이 있어야만 존재할 수 있다 (결재선 순서)
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'cases_confirm_order') then
+    alter table public.cases
+      add constraint cases_confirm_order
+      check (manager_confirmed_at is null or staff_confirmed_at is not null);
+  end if;
+end
+$$;

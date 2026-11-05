@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import CaseDetail from "@/components/CaseDetail";
 import CaseForm from "@/components/CaseForm";
 import CaseList from "@/components/CaseList";
+import ConfirmSummary from "@/components/ConfirmSummary";
 import OwnerFilter from "@/components/OwnerFilter";
 import OwnerSummary from "@/components/OwnerSummary";
 import ScanLoader from "@/components/ScanLoader";
@@ -182,6 +183,7 @@ export default function CaseBoard() {
         {user && (
           <SummaryCards cases={cases} title={editable ? "내 진행 현황" : "전체 진행 현황"} />
         )}
+        {!editable && <ConfirmSummary cases={cases} />}
         {!editable && <OwnerSummary cases={cases} />}
         <div className="flex flex-wrap items-center justify-between gap-2">
           {!editable && cases.length > 0 ? (

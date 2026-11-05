@@ -9,7 +9,8 @@ import StatusBadge from "@/components/StatusBadge";
 import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
 import { CHECKLIST_ITEMS, type ItemKey } from "@/lib/checklist";
-import { formatYmdWithWeekday } from "@/lib/dateFormat";
+import { CONFIRM_LEVELS, confirmLevelOfRole, confirmStateOf } from "@/lib/confirmation";
+import { formatDateSeoul, formatYmdWithWeekday } from "@/lib/dateFormat";
 import { canEdit, type Role } from "@/lib/role";
 import type { ItemState } from "@/lib/types";
 import { BID_DATE_MAX, BID_DATE_MIN, DELIVERY_REG_NO_MAX } from "@/lib/validation";
@@ -65,6 +66,10 @@ export default function CaseDetail({
   // 날짜 칸에 일부만 입력한 상태. 이때 브라우저는 값을 빈 문자열로 알려 주므로, 그대로 저장하면 낙찰일이 지워진다
   const [bidBadInput, setBidBadInput] = useState(false);
   const bidInputId = useId();
+  // 결재선 확인(담당자 → 팀장) 저장 상태
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [confirmNotice, setConfirmNotice] = useState<string | null>(null);
   // 송달 등기번호: 입력 중인 값과 저장 상태 (Design Ref: §7.4 — 송달 여부 확인 항목의 등기번호 입력란)
   const [regNoDraft, setRegNoDraft] = useState(item?.deliveryRegNo ?? "");
   const [savingRegNo, setSavingRegNo] = useState(false);
@@ -102,7 +107,9 @@ export default function CaseDetail({
   const incompleteCount = item.totalCount - item.completedCount;
   const percent = item.totalCount > 0 ? (item.completedCount / item.totalCount) * 100 : 0;
   // 응답 순서에 따라 오래된 값이 덮어쓰지 않도록, 저장 중에는 다른 저장을 받지 않는다
-  const busy = pending !== null || savingBid || savingRegNo;
+  const busy = pending !== null || savingBid || savingRegNo || confirming;
+  const myLevel = confirmLevelOfRole(role);
+  const confirmState = confirmStateOf(item);
   const bidDirty = draft !== (item.bidDate ?? "");
   const regNoDirty = regNoDraft.trim() !== (item.deliveryRegNo ?? "");
   const draftIssue = bidBadInput
@@ -182,6 +189,36 @@ export default function CaseDetail({
     }
   }
 
+  /** 결재선 확인 표시를 남기거나(confirmed=true) 취소한다. 내 역할의 단계만 서버가 받아 준다 */
+  async function handleConfirm(confirmed: boolean) {
+    if (busy || !myLevel) return;
+    // 담당자 확인을 취소하면 이미 남은 팀장 확인도 함께 취소되므로, 먼저 한 번 묻는다
+    if (!confirmed && myLevel === "staff" && confirmState.manager) {
+      const ok = window.confirm("담당자 확인을 취소하면 팀장 확인도 함께 취소됩니다. 계속할까요?");
+      if (!ok) return;
+    }
+    setConfirming(true);
+    setConfirmError(null);
+    setConfirmNotice(null);
+    try {
+      const updated = await callApi<CaseView>(`/api/cases/${caseId}/confirm`, {
+        method: "PUT",
+        body: { level: myLevel, confirmed },
+      });
+      onUpdated(updated);
+      const who = myLevel === "staff" ? "담당자" : "팀장";
+      setConfirmNotice(confirmed ? `${who} 확인을 남겼습니다.` : `${who} 확인을 취소했습니다.`);
+    } catch (err) {
+      setConfirmError(err instanceof ApiClientError ? err.message : GENERIC_ERROR);
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  const myConfirmed = myLevel ? confirmState[myLevel] : false;
+  // 팀장은 담당자 확인이 있어야 확인할 수 있다 (결재선 순서)
+  const managerWaiting = myLevel === "manager" && !confirmState.staff && !confirmState.manager;
+
   return (
     <section
       aria-labelledby="case-detail-title"
@@ -200,6 +237,74 @@ export default function CaseDetail({
         </h3>
         <p className="text-[13px] text-muted">구분값 {item.ownerCode}</p>
       </header>
+
+      {/* 결재선 확인 현황: 담당자 → 팀장 → 부점장. 담당자·팀장은 자기 단계만 남기고, 부점장은 열람만 한다 */}
+      <div className="sub-panel">
+        <h4 className="section-title">결재선 확인 현황</h4>
+        <ol className="confirm-flow">
+          {CONFIRM_LEVELS.map((level, index) => {
+            const done = confirmState[level.key];
+            const at = level.key === "staff" ? item.staffConfirmedAt : item.managerConfirmedAt;
+            const by = level.key === "staff" ? item.staffConfirmedBy : item.managerConfirmedBy;
+            return (
+              <li key={level.key} className="confirm-step" data-state={done ? "done" : "todo"}>
+                <span className="confirm-dot" aria-hidden="true">
+                  {done ? "✓" : index + 1}
+                </span>
+                <span className="flex flex-col leading-tight">
+                  <span className="text-[13px] font-semibold">{level.label}</span>
+                  <span className="text-xs text-muted">
+                    {done && at ? `확인 ${formatDateSeoul(at)}${by ? ` · ${by}` : ""}` : "미확인"}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+          <li className="confirm-step" data-state="view">
+            <span className="confirm-dot" aria-hidden="true">
+              3
+            </span>
+            <span className="flex flex-col leading-tight">
+              <span className="text-[13px] font-semibold">부점장</span>
+              <span className="text-xs text-muted">열람 · 결재는 앱 밖</span>
+            </span>
+          </li>
+        </ol>
+        {myLevel ? (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (managerWaiting) return;
+                  void handleConfirm(!myConfirmed);
+                }}
+                aria-disabled={busy || managerWaiting}
+                className={"btn " + (myConfirmed ? "btn-secondary" : "btn-primary")}
+              >
+                {confirming
+                  ? "저장 중..."
+                  : `${CONFIRM_LEVELS.find((l) => l.key === myLevel)?.label} 확인${myConfirmed ? " 취소" : ""}`}
+              </button>
+              {managerWaiting && (
+                <span className="field-hint">담당자 확인이 있어야 팀장 확인을 남길 수 있습니다.</span>
+              )}
+            </div>
+            {confirmError && (
+              <p role="alert" className={ERROR_TEXT}>
+                {confirmError}
+              </p>
+            )}
+            <p aria-live="polite" className="min-h-4 text-xs text-muted">
+              {confirmNotice}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-muted">
+            부점장은 담당자·팀장의 확인 현황을 열람만 합니다. 결재 처리는 앱 밖에서 진행합니다.
+          </p>
+        )}
+      </div>
 
       {/* 낙찰일 · 매각결정기일 · 기한 상태 (논리 묶음별로 나눈 흰 구역) */}
       <div className="flex flex-col gap-3">

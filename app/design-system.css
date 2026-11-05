@@ -471,3 +471,60 @@
     transform: none;
   }
 }
+
+/* ───── 결재선 확인 현황: 담당자 → 팀장 → 부점장 (번호로 순서를 알린다) ───── */
+.confirm-flow {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 520px) {
+  .confirm-flow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.confirm-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease;
+}
+.confirm-step[data-state="done"] {
+  border-color: var(--success);
+  background: var(--success-light);
+}
+.confirm-step[data-state="view"] {
+  border-style: dashed;
+}
+.confirm-dot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--control-border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+.confirm-step[data-state="done"] .confirm-dot {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-step {
+    transition: none;
+  }
+}

@@ -10,6 +10,10 @@ type CaseRow = {
   owner_code: string;
   bid_date: string | null;
   delivery_reg_no: string | null;
+  staff_confirmed_at: string | null;
+  staff_confirmed_by: string | null;
+  manager_confirmed_at: string | null;
+  manager_confirmed_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -26,6 +30,8 @@ export interface CaseWithChecks {
 export class DuplicateCaseError extends Error {}
 /** 없는 물건일 때 */
 export class CaseNotFoundError extends Error {}
+/** 담당자 확인 없이 팀장 확인을 하려 할 때 (결재선 순서 위반) */
+export class ConfirmOrderError extends Error {}
 
 const UNIQUE_VIOLATION = "23505";
 
@@ -36,6 +42,10 @@ function toRecord(row: CaseRow): CaseRecord {
     ownerCode: row.owner_code,
     bidDate: row.bid_date,
     deliveryRegNo: row.delivery_reg_no,
+    staffConfirmedAt: row.staff_confirmed_at ?? null,
+    staffConfirmedBy: row.staff_confirmed_by ?? null,
+    managerConfirmedAt: row.manager_confirmed_at ?? null,
+    managerConfirmedBy: row.manager_confirmed_by ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -139,6 +149,57 @@ export async function updateCase(
   if (patch.deliveryRegNo !== undefined) {
     update.delivery_reg_no = patch.deliveryRegNo;
   }
+  const { data, error } = await getSupabase()
+    .from("cases")
+    .update(update)
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error) storageError(error);
+  if (!data) throw new CaseNotFoundError("없는 물건입니다.");
+  const result = await getCase(id);
+  if (!result) throw new CaseNotFoundError("없는 물건입니다.");
+  return result;
+}
+
+/**
+ * 결재선 확인 표시를 남기거나 취소한다. 순서는 담당자 → 팀장이다.
+ *  - 담당자 확인을 취소하면, 그 뒤의 팀장 확인도 함께 취소된다.
+ *  - 담당자 확인이 없는 물건에는 팀장 확인을 남길 수 없다(ConfirmOrderError).
+ * confirmedBy는 확인한 계정 아이디(이름이 아닌 코드). 없는 물건이면 CaseNotFoundError
+ */
+export async function setConfirmation(
+  id: string,
+  level: "staff" | "manager",
+  confirmed: boolean,
+  confirmedBy: string,
+): Promise<CaseWithChecks> {
+  const current = await getCase(id);
+  if (!current) throw new CaseNotFoundError("없는 물건입니다.");
+  const now = new Date().toISOString();
+  const update: Record<string, string | null> = { updated_at: now };
+
+  if (level === "staff") {
+    if (confirmed) {
+      update.staff_confirmed_at = now;
+      update.staff_confirmed_by = confirmedBy;
+    } else {
+      update.staff_confirmed_at = null;
+      update.staff_confirmed_by = null;
+      update.manager_confirmed_at = null;
+      update.manager_confirmed_by = null;
+    }
+  } else if (confirmed) {
+    if (current.record.staffConfirmedAt === null) {
+      throw new ConfirmOrderError("담당자 확인이 먼저 필요합니다.");
+    }
+    update.manager_confirmed_at = now;
+    update.manager_confirmed_by = confirmedBy;
+  } else {
+    update.manager_confirmed_at = null;
+    update.manager_confirmed_by = null;
+  }
+
   const { data, error } = await getSupabase()
     .from("cases")
     .update(update)
