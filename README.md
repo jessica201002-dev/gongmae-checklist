@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 압류재산 공매업무 체크리스트
 
-## Getting Started
+한국자산관리공사 임직원이 압류재산 공매의 **매각결정 단계**를 빠뜨리지 않고, **기한 안에** 처리하도록 돕는 내부용 웹 앱입니다.
 
-First, run the development server:
+> ⚠️ **샘플(가짜) 데이터 전용입니다.** 실제 업무 정보를 입력하지 마세요. 로그인은 간단한 자체 계정이며 외부 인증·2단계 인증이 없습니다.
+
+기획 문서(심사 자료): [PRD.md](PRD.md) · [PLAN.md](PLAN.md)
+
+## 왜 만들었나
+
+공매 물건이 많아지면 매각결정 단계에서 확인할 서류와 지켜야 할 기한이 늘어, 기한을 놓치거나 서류 검토를 빠뜨릴 위험이 커집니다. 지금은 담당자가 수기로 체크합니다. 이 앱은 확인 항목을 체크리스트로 정리하고 **매각결정기일을 미리 알려 줘서**, 누구나 같은 기준으로 빠짐없이 처리하게 돕습니다.
+
+## 주요 기능
+
+**담당자**
+- 물건번호를 입력해 물건을 등록·삭제합니다. 담당자 구분값은 로그인한 계정에서 자동으로 정해지고, 내 구분값의 물건만 보입니다.
+- 6개 확인 항목(송달 여부, 공매 실익, 감정가, 면적 등 일치, 공매중지문서 접수, 현황조사)을 "완료" 또는 "해당 없음"으로 체크합니다. "해당 없음"은 완료로 계산하고, 미완료가 1개라도 있으면 "매각결정 완료"로 표시하지 않습니다.
+- 낙찰일을 입력하면 **매각결정기일(낙찰일 + 7영업일, 주말·공휴일 제외)** 이 계산됩니다. 기일 2영업일 전부터 "임박", 지나면 "기일 경과"로 표시하고, 6개를 모두 완료한 물건에는 표시하지 않습니다.
+- 송달 항목에 등기번호(숫자와 하이픈)를 입력할 수 있습니다.
+- "담당자 확인"을 남깁니다(결재선: 담당자 → 팀장 → 부점장).
+
+**팀장·부점장**
+- 체크리스트는 **열람만** 합니다. 미완료 물건은 "검토 필요"로 맨 위에 보이고 완료 수/전체 수(예: 4/6)가 보입니다.
+- 담당자 구분값별 진행 현황과 결재선 확인 현황을 한눈에 봅니다.
+- 팀장은 담당자 확인이 있는 물건에 "팀장 확인"을 남기고, 부점장은 두 확인을 열람합니다. 결재 처리는 앱 밖에서 합니다.
+
+**시험용 온비드 가상 조회**: 실제 온비드와 연결하지 않고, 정해진 가상 물건번호로 조회하면 가상 낙찰일과 물건 정보가 채워집니다("가상 데이터"로 표시).
+
+## 기술 스택
+
+- **Next.js 16** (App Router) · React 19 · TypeScript · Tailwind CSS 4
+- **Supabase** (PostgreSQL) — 서버에서만 접근하고, 접근 보호(RLS)를 켜 두었습니다
+- 자체 로그인: 비밀번호는 Node 내장 scrypt로 암호화, 로그인 상태는 서버가 서명한 보안 쿠키(HttpOnly, SameSite)
+- **Vercel** 배포
+
+## 로컬 실행
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run lint
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+프로젝트 폴더의 `.env`에 아래 이름의 값을 직접 넣어야 합니다(값은 저장소에 없습니다).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| 이름 | 용도 |
+|------|------|
+| `SUPABASE_URL` | Supabase 접속 주소 (서버 전용) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 서버용 키 (서버 전용) |
+| `SESSION_SECRET` | 로그인 쿠키 서명 키 (32자 이상 무작위) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+표 정의는 [`supabase/schema.sql`](supabase/schema.sql)에 있습니다.
 
-## Learn More
+## 샘플 데이터와 계정
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run seed            # 샘플 물건 7건 (오늘 날짜 기준으로 임박·기일 경과가 나오게 생성)
+npm run seed:onbid      # 가상 조회용 물건 6건
+npm run seed:accounts   # 샘플 계정 5개 (담당자 3, 팀장 1, 부점장 1) — 비밀번호는 무작위로 만들어 .env.sample-accounts에 저장
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`.env*` 파일은 Git에 올라가지 않습니다. 계정 아이디는 `staff01`~`staff03`(담당-01~03), `manager01`(팀장), `director01`(부점장)입니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 폴더 구조
 
-## Deploy on Vercel
+```
+app/            화면(/, /login)과 서버 API(app/api/…), 공통 스타일(design-system.css)
+components/     목록·상세·폼·카드 등 화면 부품
+lib/            업무 규칙(영업일·기한·체크리스트·공휴일), 로그인·세션, 저장소 접근
+scripts/        샘플 물건·계정 생성 스크립트
+supabase/       표 정의(schema.sql)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 알려 둘 점
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 매각결정기일 계산에 쓰는 공휴일 목록은 코드(`lib/holidays.ts`)에 있으며 2026~2027년만 다룹니다. 범위 밖 낙찰일은 입력은 받되 경고를 보여 줍니다.
+- 앱은 업무의 적합 여부를 판단하지 않습니다. 판단은 사람이 합니다.
+- 서류 원본 업로드, 앱 안의 결재 처리, 메일·문자 알림, 실제 온비드 연동은 만들지 않았습니다(자세한 범위는 [PRD.md](PRD.md)).
