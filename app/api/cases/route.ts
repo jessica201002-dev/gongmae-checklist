@@ -10,8 +10,8 @@ import {
 } from "@/lib/api";
 import { buildCaseView } from "@/lib/caseView";
 import { todayInSeoul } from "@/lib/deadline";
-import { createCase, listCases } from "@/lib/db/cases";
-import { validateCaseNo } from "@/lib/validation";
+import { countCases, createCase, listCases } from "@/lib/db/cases";
+import { MAX_CASES_PER_OWNER, validateCaseNo } from "@/lib/validation";
 
 /**
  * 물건 목록 (등록 순). 담당자는 자기 구분값의 물건만, 팀장·부점장은 전체를 본다.
@@ -50,6 +50,13 @@ export async function POST(request: NextRequest) {
 
     const caseNo = validateCaseNo(body.caseNo);
     if (!caseNo.ok) return fail("VALIDATION_ERROR", caseNo.message, 400);
+    if ((await countCases(ownerCode)) >= MAX_CASES_PER_OWNER) {
+      return fail(
+        "VALIDATION_ERROR",
+        `등록할 수 있는 물건은 구분값당 ${MAX_CASES_PER_OWNER}건까지입니다. 끝난 물건을 삭제한 뒤 다시 등록해 주세요.`,
+        400,
+      );
+    }
 
     const created = await createCase(caseNo.value, ownerCode);
     return ok(buildCaseView(created.record, created.checks, todayInSeoul()), 201);

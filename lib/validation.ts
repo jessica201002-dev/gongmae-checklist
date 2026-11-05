@@ -10,6 +10,8 @@ export type Validated<T> =
 export const CASE_NO_MAX = 50;
 export const OWNER_CODE_MAX = 20;
 export const DELIVERY_REG_NO_MAX = 30;
+/** 담당자 구분값 하나로 등록할 수 있는 물건 수의 상한 (끝없는 등록으로 목록이 무거워지는 것을 막는다) */
+export const MAX_CASES_PER_OWNER = 500;
 
 // 낙찰일로 받을 수 있는 범위. 화면의 날짜 칸과 서버가 같은 값을 쓴다.
 // (서버에서도 막지 않으면 API로 보낸 엉뚱한 연도가 기일 계산을 깨뜨려 목록 전체가 오류가 난다)

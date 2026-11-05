@@ -76,6 +76,16 @@ export async function listCases(ownerCode?: string): Promise<CaseWithChecks[]> {
   }));
 }
 
+/** 그 담당자 구분값으로 등록된 물건 수 */
+export async function countCases(ownerCode: string): Promise<number> {
+  const { count, error } = await getSupabase()
+    .from("cases")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_code", ownerCode);
+  if (error) storageError(error);
+  return count ?? 0;
+}
+
 /** 물건 한 건. 없으면 null */
 export async function getCase(id: string): Promise<CaseWithChecks | null> {
   const db = getSupabase();

@@ -43,7 +43,11 @@ export default function CaseBoard() {
     async function load() {
       try {
         const data = await callApi<CaseView[]>("/api/cases");
-        if (!cancelled) setCases(data);
+        if (!cancelled) {
+          setCases(data);
+          // 새로고침 버튼으로 다시 불러온 경우에만 결과를 알린다 (처음 불러올 때는 알리지 않는다)
+          if (reloadKey > 0) setNotice("목록을 새로 불러왔습니다.");
+        }
       } catch (err) {
         if (!cancelled) {
           setLoadError(
@@ -179,13 +183,25 @@ export default function CaseBoard() {
           <SummaryCards cases={cases} title={editable ? "내 진행 현황" : "전체 진행 현황"} />
         )}
         {!editable && <OwnerSummary cases={cases} />}
-        {!editable && cases.length > 0 && (
-          <OwnerFilter
-            owners={ownerCodes}
-            value={activeOwner}
-            onChange={handleOwnerFilter}
-          />
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {!editable && cases.length > 0 ? (
+            <OwnerFilter
+              owners={ownerCodes}
+              value={activeOwner}
+              onChange={handleOwnerFilter}
+            />
+          ) : (
+            <span />
+          )}
+          {/* 다른 사람이 바꾼 내용이나 날짜가 바뀐 뒤의 기한 상태를 다시 불러온다 */}
+          <button
+            type="button"
+            onClick={() => setReloadKey((key) => key + 1)}
+            className="min-h-11 rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+          >
+            목록 새로고침
+          </button>
+        </div>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
           <CaseList
             cases={visibleCases}
