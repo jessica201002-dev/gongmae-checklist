@@ -83,13 +83,17 @@ export const ONBID_SAMPLES: readonly OnbidSample[] = [
 export function findOnbidSample(caseNo: string, today: string = todayInSeoul()): OnbidLookupResult | null {
   const sample = ONBID_SAMPLES.find((item) => item.caseNo === caseNo.trim());
   if (!sample) return null;
+  const bidDate =
+    sample.bidBusinessDaysAgo === null ? null : subtractBusinessDays(today, sample.bidBusinessDaysAgo);
+  // 가상 값에서 감정가액을 꺼내고, 낙찰 건에는 가상 낙찰가액(최저입찰가와 같은 값, 감정가의 70%)을 붙인다
+  const appraisal = sample.info.find((row) => row.label === "감정가")?.value;
+  const winningBid = bidDate ? sample.info.find((row) => row.label === "최저입찰가")?.value : undefined;
   return {
     status: "found",
     sample: true,
-    bidDate:
-      sample.bidBusinessDaysAgo === null
-        ? null
-        : subtractBusinessDays(today, sample.bidBusinessDaysAgo),
+    bidDate,
+    ...(appraisal ? { appraisal } : {}),
+    ...(winningBid ? { winningBid, winningRatio: "70%" } : {}),
     info: sample.info,
   };
 }
