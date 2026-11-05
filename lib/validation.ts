@@ -46,8 +46,20 @@ function validateText(
   return { ok: true, value: text };
 }
 
+/** 물건번호 모양: 연도 4자리 - 공고번호 5자리 - 구분번호 3자리 (예: 2026-00123-001) */
+export const CASE_NO_PATTERN = /^20[0-9]{2}-[0-9]{5}-[0-9]{3}$/;
+export const CASE_NO_FORMAT_HINT = "연도4자리-번호5자리-구분번호3자리";
+
 export function validateCaseNo(value: unknown): Validated<string> {
-  return validateText(value, "물건번호", CASE_NO_MAX);
+  const text = validateText(value, "물건번호", CASE_NO_MAX);
+  if (!text.ok) return text;
+  if (!CASE_NO_PATTERN.test(text.value)) {
+    return {
+      ok: false,
+      message: `물건번호는 ${CASE_NO_FORMAT_HINT} 형식으로 입력해 주세요. (예: 2026-00123-001)`,
+    };
+  }
+  return text;
 }
 
 export function validateOwnerCode(value: unknown): Validated<string> {

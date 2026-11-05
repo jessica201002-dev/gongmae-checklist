@@ -74,36 +74,36 @@ function buildSamples(rules, today) {
   const businessDaysAgo = (n) => rules.business.subtractBusinessDays(latestBusinessDay, n);
   return [
     {
-      caseNo: "샘플-001", ownerCode: "담당-01", bidDate: null, deliveryRegNo: null, checks: {},
+      caseNo: "2026-10001-001", ownerCode: "담당-01", bidDate: null, deliveryRegNo: null, checks: {},
       note: "낙찰일 없음 (기일·기한 상태 없음, 입력 안내)",
     },
     {
-      caseNo: "샘플-002", ownerCode: "담당-01", bidDate: latestBusinessDay, deliveryRegNo: null,
+      caseNo: "2026-10001-002", ownerCode: "담당-01", bidDate: latestBusinessDay, deliveryRegNo: null,
       checks: { delivery: "done", benefit: "na", appraisal: "done" },
       note: "기한 표시 없음 (기일이 한참 남음), 3/6",
     },
     {
-      caseNo: "샘플-003", ownerCode: "담당-02", bidDate: findBidDate(rules, today, "imminent"), deliveryRegNo: null,
+      caseNo: "2026-10002-001", ownerCode: "담당-02", bidDate: findBidDate(rules, today, "imminent"), deliveryRegNo: null,
       checks: done("delivery", "benefit", "appraisal", "area_match", "suspension_doc"),
       note: "임박, 5/6",
     },
     {
-      caseNo: "샘플-004", ownerCode: "담당-02", bidDate: findBidDate(rules, today, "overdue"), deliveryRegNo: null,
+      caseNo: "2025-10003-001", ownerCode: "담당-02", bidDate: findBidDate(rules, today, "overdue"), deliveryRegNo: null,
       checks: done("delivery", "benefit", "appraisal", "area_match"),
       note: "기일 경과, 4/6",
     },
     {
-      caseNo: "샘플-005", ownerCode: "담당-03", bidDate: businessDaysAgo(21), deliveryRegNo: null,
+      caseNo: "2025-10003-002", ownerCode: "담당-03", bidDate: businessDaysAgo(21), deliveryRegNo: null,
       checks: { delivery: "done", benefit: "na", appraisal: "done", area_match: "done", suspension_doc: "na", field_survey: "done" },
       note: "모두 완료 6/6 (해당 없음 포함), 기한 배지 없음",
     },
     {
-      caseNo: "샘플-006", ownerCode: "담당-03", bidDate: businessDaysAgo(1), deliveryRegNo: "0000-0000-0001",
+      caseNo: "2024-10004-001", ownerCode: "담당-03", bidDate: businessDaysAgo(1), deliveryRegNo: "0000-0000-0001",
       checks: { delivery: "done", benefit: "done" },
       note: "송달 항목에 가짜 등기번호 포함, 2/6",
     },
     {
-      caseNo: "샘플-007", ownerCode: "담당-01", bidDate: "2028-01-03", deliveryRegNo: null, checks: {},
+      caseNo: "2024-10004-002", ownerCode: "담당-01", bidDate: "2028-01-03", deliveryRegNo: null, checks: {},
       note: "공휴일 목록(2026~2027년) 범위 밖 낙찰일 (경고 표시)",
     },
   ];
@@ -148,9 +148,13 @@ async function main() {
     const { url, key } = requireEnv();
     const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-    // 1) 기존 샘플 지우기 ("샘플-"로 시작하는 물건만. 항목 체크는 함께 지워진다)
-    const { data: existing, error: listError } = await db.from("cases").select("id, case_no").like("case_no", `${SAMPLE_PREFIX}%`);
+    // 1) 기존 샘플 지우기 (이 스크립트가 만드는 물건번호와, 예전에 쓰던 "샘플-"로 시작하는 물건만. 항목 체크는 함께 지워진다)
+    const sampleNumbers = samples.map((s) => s.caseNo);
+    const { data: byNumber, error: listError } = await db.from("cases").select("id, case_no").in("case_no", sampleNumbers);
     if (listError) throw new Error(`기존 샘플 조회 실패: ${listError.message}`);
+    const { data: legacy, error: legacyError } = await db.from("cases").select("id, case_no").like("case_no", `${SAMPLE_PREFIX}%`);
+    if (legacyError) throw new Error(`예전 샘플 조회 실패: ${legacyError.message}`);
+    const existing = [...(byNumber ?? []), ...(legacy ?? [])];
     if (existing.length > 0) {
       const { error } = await db.from("cases").delete().in("id", existing.map((c) => c.id));
       if (error) throw new Error(`기존 샘플 삭제 실패: ${error.message}`);

@@ -4,7 +4,7 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
-import { CASE_NO_MAX, OWNER_CODE_MAX } from "@/lib/validation";
+import { CASE_NO_FORMAT_HINT, CASE_NO_PATTERN, OWNER_CODE_MAX } from "@/lib/validation";
 
 const inputClass =
   "min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground " +
@@ -35,6 +35,10 @@ export default function CaseForm({
     if (Date.now() - lastSuccessAt.current < 1000) return;
     if (caseNo.trim() === "") {
       setError("물건번호를 입력해 주세요.");
+      return;
+    }
+    if (!CASE_NO_PATTERN.test(caseNo.trim())) {
+      setError(`물건번호는 ${CASE_NO_FORMAT_HINT} 형식으로 입력해 주세요. (예: 2026-00123-001)`);
       return;
     }
     setSubmitting(true);
@@ -77,11 +81,16 @@ export default function CaseForm({
             ref={caseNoRef}
             value={caseNo}
             onChange={(event) => setCaseNo(event.target.value)}
-            maxLength={CASE_NO_MAX}
+            maxLength={14}
             autoComplete="off"
-            placeholder="예: 샘플-001"
+            inputMode="numeric"
+            aria-describedby={`${caseNoId}-hint`}
+            placeholder="예: 2026-00123-001"
             className={inputClass}
           />
+          <span id={`${caseNoId}-hint`} className="text-xs text-muted">
+            앞 4자리는 연도, 가운데 5자리는 번호, 뒤 3자리는 구분번호입니다.
+          </span>
         </div>
         <div className="flex flex-1 flex-col gap-1">
           <label htmlFor={ownerCodeId} className="text-sm font-medium">
