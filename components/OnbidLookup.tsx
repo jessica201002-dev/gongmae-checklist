@@ -23,8 +23,11 @@ export default function OnbidLookup({
   blocked,
   bidDateAllowed,
   onFill,
+  onAppraisal,
 }: {
   caseId: string;
+  /** 조회로 읽어 온 온비드 감정가액을 알린다 (없으면 null). 저장하지 않고 화면에만 보여 준다 */
+  onAppraisal?: (value: string | null, sample: boolean) => void;
   /** 다른 저장이 진행 중이면 true: 누르지 않게 한다 */
   blocked: boolean;
   /** 낙찰일로 받을 수 있는 날짜인지 (입력칸의 허용 범위) */
@@ -48,6 +51,10 @@ export default function OnbidLookup({
       });
       if (mine !== requestId.current) return;
       setOutcome(describe(result, bidDateAllowed, onFill));
+      onAppraisal?.(
+        result.status === "found" ? (result.appraisal ?? null) : null,
+        result.status === "found" && result.sample === true,
+      );
     } catch (err) {
       if (mine !== requestId.current) return;
       setOutcome({

@@ -17,6 +17,8 @@ export type OnbidLookupResult =
       sample?: true;
       /** 낙찰일 "YYYY-MM-DD". 온비드에 낙찰일이 없으면 null */
       bidDate: string | null;
+      /** 온비드의 감정가액 표시 문구(예: "501,000,000원"). 온비드에 없으면 생략 */
+      appraisal?: string;
       /** 화면에 보여 줄 공개 물건 기본 정보 (이름표 → 값) */
       info: { label: string; value: string }[];
     }

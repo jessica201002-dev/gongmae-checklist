@@ -71,6 +71,12 @@ export default function CaseDetail({
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [confirmNotice, setConfirmNotice] = useState<string | null>(null);
   // 송달 등기번호: 입력 중인 값과 저장 상태 (Design Ref: §7.4 — 송달 여부 확인 항목의 등기번호 입력란)
+  // 온비드 조회로 읽어 온 감정가액 (화면에만 보여 주고 저장하지 않는다. 다른 물건으로 바뀌면 보이지 않음)
+  const [onbidAppraisal, setOnbidAppraisal] = useState<{
+    caseId: string;
+    value: string;
+    sample: boolean;
+  } | null>(null);
   const [regNoDraft, setRegNoDraft] = useState(item?.deliveryRegNo ?? "");
   const [savingRegNo, setSavingRegNo] = useState(false);
   const [regNoError, setRegNoError] = useState<string | null>(null);
@@ -373,6 +379,9 @@ export default function CaseDetail({
               {/* Plan SC: FR-15~17 — 온비드 공개 정보 조회로 낙찰일을 채운다(저장은 담당자가 확인한 뒤) */}
               <OnbidLookup
                 caseId={caseId}
+                onAppraisal={(value, sample) =>
+                  setOnbidAppraisal(value ? { caseId, value, sample } : null)
+                }
                 blocked={busy}
                 bidDateAllowed={(ymd) => bidDateProblem(ymd) === null}
                 onFill={(ymd) => {
@@ -588,6 +597,17 @@ export default function CaseDetail({
                     )}
                   </p>
                 ))}
+              {check.key === "appraisal" && onbidAppraisal && onbidAppraisal.caseId === caseId && (
+                <p className="border-t border-line pt-3 text-sm">
+                  <span className="font-semibold">온비드 감정가액</span>{" "}
+                  <strong className="tabular-nums">{onbidAppraisal.value}</strong>
+                  <span className="ml-2 text-xs text-muted">
+                    {onbidAppraisal.sample
+                      ? "가상(샘플) 데이터 · 저장되지 않음"
+                      : "온비드 조회 결과 · 저장되지 않음, 확인은 담당자가 합니다"}
+                  </span>
+                </p>
+              )}
               {rowError && (
                 <p role="alert" className={ERROR_TEXT}>
                   {rowError}

@@ -127,7 +127,8 @@ export function parseOnbidResponse(json: unknown, caseNo?: string): OnbidLookupR
     ["입찰 결과", status ? `${status}${text(first.pbctNsq) ? ` (${Number(first.pbctNsq)}회차)` : ""}` : null],
   ];
   const info = rows.flatMap(([label, value]) => (value ? [{ label, value }] : []));
-  return { status: "found", bidDate, info };
+  const appraisal = won(first.apslEvlAmt) ?? undefined;
+  return { status: "found", bidDate, ...(appraisal ? { appraisal } : {}), info };
 }
 
 // 같은 물건번호를 반복 조회해도 온비드 호출 한도를 쓰지 않도록, 결과를 잠시 재사용한다.
