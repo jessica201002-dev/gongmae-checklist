@@ -7,26 +7,9 @@ const ENDPOINT =
   "https://apis.data.go.kr/B010003/OnbidCltrBidRsltDtlSrvc2/getCltrBidRsltDtl2";
 const TIMEOUT_MS = 8000;
 
-/** 조회에 실패한 이유 (화면에는 쉬운 말로 바꿔 보여 준다) */
-export type OnbidUnavailableReason =
-  | "no_key" // .env에 인증키가 없음
-  | "key_rejected" // 포털이 인증키를 받아 주지 않음(미등록·미승인·만료 등)
-  | "rate_limited" // 호출 한도 초과
-  | "timeout" // 응답이 늦음
-  | "upstream_error" // 그 밖의 온비드·포털 쪽 오류
-  | "mapping_pending"; // 응답 필드 대응이 아직 확정되지 않음
+import type { OnbidLookupResult, OnbidUnavailableReason } from "./onbidTypes";
 
-/** 조회 결과: 찾음 / 결과 없음 / 조회 불가 */
-export type OnbidLookupResult =
-  | {
-      status: "found";
-      /** 낙찰일 "YYYY-MM-DD". 온비드에 낙찰일이 없으면 null */
-      bidDate: string | null;
-      /** 화면에 보여 줄 공개 물건 기본 정보 (이름표 → 값) */
-      info: { label: string; value: string }[];
-    }
-  | { status: "not_found" }
-  | { status: "unavailable"; reason: OnbidUnavailableReason };
+export type { OnbidLookupResult, OnbidUnavailableReason };
 
 // 응답 필드 대응표. 실제 응답을 받아 본 뒤 확정한다(작업 14).
 // 인증키가 승인되기 전에는 응답 모양을 확인할 수 없어 비워 둔다. 비어 있으면 "mapping_pending"으로 처리한다.

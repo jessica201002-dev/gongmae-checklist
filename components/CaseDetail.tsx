@@ -3,6 +3,7 @@
 // Design Ref: §7.1, §7.3, §7.4 — 물건 상세: 낙찰일·매각결정기일·기한 상태 + 매각결정 체크리스트 6개 항목.
 // 담당자는 낙찰일을 입력하고 항목마다 미완료 / 완료 / 해당 없음을 고르며, 팀장·부점장은 읽기만 한다.
 import { useId, useRef, useState, type Ref } from "react";
+import OnbidLookup from "@/components/OnbidLookup";
 import StatusBadge from "@/components/StatusBadge";
 import { ApiClientError, callApi } from "@/lib/apiClient";
 import type { CaseView } from "@/lib/caseView";
@@ -253,6 +254,18 @@ export default function CaseDetail({
             <p aria-live="polite" className="min-h-4 text-xs text-muted">
               {bidNotice}
             </p>
+            {/* Plan SC: FR-15~17 — 온비드 공개 정보 조회로 낙찰일을 채운다(저장은 담당자가 확인한 뒤) */}
+            <OnbidLookup
+              caseId={caseId}
+              role={role}
+              blocked={busy}
+              bidDateAllowed={(ymd) => bidDateProblem(ymd) === null}
+              onFill={(ymd) => {
+                setDraft(ymd);
+                setBidNotice(null);
+                setBidError(null);
+              }}
+            />
           </div>
         ) : (
           <p className="text-sm">
