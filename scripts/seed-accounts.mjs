@@ -36,8 +36,10 @@ const SAMPLE_ACCOUNTS = [
 
 // 기본값은 무작위 비밀번호다. 아이디가 코드에 공개되어 있어, 약한 비밀번호가 DB에 들어 있으면
 // 배포 환경에서 누구나 로그인할 수 있기 때문이다. --simple을 직접 붙여야만 1234가 된다.
-const SIMPLE_PASSWORD = "1234";
-const USE_SIMPLE = process.argv.slice(2).includes("--simple");
+// --password=값 으로 모든 샘플 계정의 비밀번호를 같은 값으로 정할 수 있다(--simple은 1234).
+const CUSTOM_PASSWORD = process.argv.slice(2).find((a) => a.startsWith("--password="))?.slice("--password=".length);
+const SIMPLE_PASSWORD = CUSTOM_PASSWORD || "1234";
+const USE_SIMPLE = CUSTOM_PASSWORD !== undefined || process.argv.slice(2).includes("--simple");
 
 // 헷갈리는 글자(0 O 1 l I)를 뺀 글자로 14자 무작위 비밀번호를 만든다
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
@@ -71,7 +73,7 @@ function loadEnv() {
 
 async function main() {
   if (USE_SIMPLE) {
-    console.log("⚠ --simple: 비밀번호를 1234로 만듭니다. 배포 환경과 같은 DB이므로 공개(배포) 전에는 옵션 없이 다시 실행하세요.\n");
+    console.log("⚠ 모든 샘플 계정의 비밀번호를 같은 쉬운 값으로 만듭니다. 배포 환경과 같은 DB이므로 공개(배포) 전에는 옵션 없이 다시 실행하세요.\n");
   }
   console.log(`샘플 계정 ${SAMPLE_ACCOUNTS.length}개 (${DRY_RUN ? "미리 보기" : "저장"}):`);
   for (const a of SAMPLE_ACCOUNTS) {
