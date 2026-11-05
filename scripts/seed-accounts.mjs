@@ -1,7 +1,8 @@
 // Design Ref: §5.5, §10.3 — 샘플(가짜) 로그인 계정 만들기. 시연과 점검에 쓴다.
 //
 // 사용법 (프로젝트 폴더에서):
-//   npm run seed:accounts     샘플 계정을 (다시) 만든다. 비밀번호는 새로 정해진다.
+//   npm run seed:accounts                  샘플 계정을 (다시) 만든다. 비밀번호는 모두 간단한 값(1234)이다.
+//   node scripts/seed-accounts.mjs --random  비밀번호를 계정마다 무작위 14자로 만든다(공개 전에 사용).
 //   node scripts/seed-accounts.mjs --dry-run   표는 건드리지 않고 만들 계정 아이디만 보여 준다.
 //
 // 안전 규칙
@@ -32,10 +33,18 @@ const SAMPLE_ACCOUNTS = [
   { loginId: "director01", role: "director", ownerCode: null },
 ];
 
-// 헷갈리는 글자(0 O 1 l I)를 뺀 글자로 14자 무작위 비밀번호를 만든다
+// 시연을 편하게 하려고 샘플 계정의 비밀번호는 모두 같은 간단한 값으로 한다.
+// ※ 이 값은 아주 약하다. 샘플 계정을 실제 공개 주소에서 쓰기 전에는 반드시 --random으로 바꿔야 한다.
+const SIMPLE_PASSWORD = "1234";
+const USE_RANDOM = process.argv.slice(2).includes("--random");
+
+// --random: 헷갈리는 글자(0 O 1 l I)를 뺀 글자로 14자 무작위 비밀번호를 만든다
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
 function randomPassword() {
   return Array.from({ length: 14 }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
+}
+function samplePassword() {
+  return USE_RANDOM ? randomPassword() : SIMPLE_PASSWORD;
 }
 
 // lib/password.ts를 임시 폴더(node_modules/.cache, Git에 올라가지 않음)에서 JavaScript로 바꿔 불러온다
@@ -73,7 +82,7 @@ async function main() {
     const rows = [];
     const lines = ["# 샘플(가짜) 계정의 로그인 정보입니다. 이 파일은 Git·배포에서 제외됩니다. 아이디=비밀번호"];
     for (const a of SAMPLE_ACCOUNTS) {
-      const password = randomPassword();
+      const password = samplePassword();
       rows.push({
         login_id: a.loginId,
         password_hash: await lib.hashPassword(password),
